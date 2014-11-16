@@ -7,17 +7,13 @@
 //#####################//
 
 //### from DaVinci, this is a specialized GaudiAlgorithm ###//
-//#include "Kernel/DVAlgorithm.h"
 #include "Kernel/DaVinciTupleAlgorithm.h"
-//#include "Kernel/DaVinciAlgorithm.h"
 //### MC data retrieval ###//
 #include "Event/MCParticle.h"
 //### Is MC Reconstructible? ###//
 #include "MCInterfaces/IMCReconstructible.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT Decision ###//
-//#include "Event/HltDecReports.h"
 //### Association between MC and Reconstructed###//
 #include "Kernel/Particle2MCLinker.h"
 // Convert MCParticle to Particle??
@@ -36,14 +32,10 @@
  *  @date   12-04-2011
  */
 
-//class Extra : public DVAlgorithm 
 class Extra : public DaVinciTupleAlgorithm 
-//class Extra : public DaVinciAlgorithm 
 {
 public: 
-  /// Standard constructor
   Extra( const std::string& name, ISvcLocator* pSvcLocator );
-  
   virtual ~Extra( );                   ///< Destructor
   virtual StatusCode initialize();     ///< Algorithm initialization
   virtual StatusCode execute   ();     ///< Algorithm execution
@@ -66,7 +58,5 @@ private:
   //double m_pi;                           //< Defines pi for calcultion of azimuthal angle difference 
   IDistanceCalculator *m_distTool;       //< For IP calculation
   ISvcLocator *m_local;                  //< Test to use pSvcLocator to call external local algorithms 
-  //static int constructorCalls;
-  //static int destructorCalls;
 };
 #endif // EXTRA_H

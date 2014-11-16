@@ -4,7 +4,6 @@
 //### Include files ###//
 //#####################// 
 
-//#include "Kernel/DVAlgorithm.h"
 //### from Gaudi ###//
 #include "GaudiKernel/AlgFactory.h" 
 //### local ###//
@@ -15,8 +14,6 @@
 #include "MCInterfaces/IMCReconstructible.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT decision ###//
-//#include "Event/HltDecReports.h"
 #include "HltDecReports.h"
 //### Extrapolate tracks ###//
 #include "TrackInterfaces/ITrackExtrapolator.h"
@@ -41,9 +38,6 @@ using namespace Gaudi::Units;
 // 30-09-2009 : Shane Huston
 //-----------------------------------------------------------------------------
 
-int LoopOnDaughters::constructorCalls;
-int LoopOnDaughters::destructorCalls;
-
 // Declaration of the Algorithm Factory
 DECLARE_ALGORITHM_FACTORY( LoopOnDaughters );
 
@@ -52,9 +46,7 @@ DECLARE_ALGORITHM_FACTORY( LoopOnDaughters );
 //=============================================================================
 // Initialise variables defined in header file
 LoopOnDaughters::LoopOnDaughters( const std::string& name, ISvcLocator* pSvcLocator)
-  //: DVAlgorithm ( name , pSvcLocator ),
   : DaVinciTupleAlgorithm ( name , pSvcLocator ),
-  //: DaVinciAlgorithm ( name , pSvcLocator ),
     m_errorCode(-1234567),
     m_coneMax(1),
     m_numDivs(2), //(5)
@@ -62,37 +54,19 @@ LoopOnDaughters::LoopOnDaughters( const std::string& name, ISvcLocator* pSvcLoca
     m_pi(3.1415926535897932384626434)
   
 {
-  debug() << "SHUST: LoopOnDaughters constructor called" << endmsg;
   m_local = pSvcLocator;
-  //const std::string& strExtra = "Extra";
-  //m_extra = new Extra(strExtra, m_local);
-  LoopOnDaughters::constructorCalls++;
-  if (LoopOnDaughters::constructorCalls - LoopOnDaughters::destructorCalls != 1)
-    info() << "SHUST: LoopOnDaughters Constructor misbalance: " << LoopOnDaughters::constructorCalls 
-           << " vs " << LoopOnDaughters::destructorCalls << endmsg;
-  
 }
 
 //=============================================================================
 // Destructor
 //=============================================================================
-LoopOnDaughters::~LoopOnDaughters() 
-{
-  LoopOnDaughters::destructorCalls++;
-  if (LoopOnDaughters::constructorCalls - LoopOnDaughters::destructorCalls != 0)
-    info() << "SHUST: LoopOnDaughters destructor misbalance: " << LoopOnDaughters::constructorCalls 
-           << " vs " << LoopOnDaughters::destructorCalls << endmsg;
-  
-  //delete m_extra;
-} 
+LoopOnDaughters::~LoopOnDaughters() { } 
 
 //=============================================================================
 // Initialization
 //=============================================================================
 StatusCode LoopOnDaughters::initialize() {
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
   if ( sc.isFailure() ) return sc;
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
@@ -110,10 +84,7 @@ StatusCode LoopOnDaughters::execute() {
 
   setFilterPassed(true);   // Mandatory. Set to true if event is accepted. 
 
-  // code goes here
   err() << "Execute phase of LoopOnDaughters.cpp has been called." << endmsg;
-  //sc = loopOnDaughters(daughters);
-  //if (!sc) return sc;
  
   return StatusCode::SUCCESS;
 }
@@ -174,7 +145,6 @@ StatusCode LoopOnDaughters::plotReconstructedData(const LHCb::Particle* da, Tupl
 StatusCode LoopOnDaughters::plotLHCbIDs(LHCb::Track::LHCbIDContainer lhcbIDs, Tuple daTuple, const std::string& head) const
 {
   //### Extract details on on LHCbIDs ###//
-  //LHCb::Track::LHCbIDContainer lhcbIDs = da->proto()->track()->lhcbIDs();
   int numVeloIDs=0, numTTIDs=0, numITIDs=0, numOTIDs=0, numRichIDs=0, numCaloIDs=0;
   
   for ( LHCb::Track::LHCbIDContainer::const_iterator ihit = lhcbIDs.begin(); ihit != lhcbIDs.end(); ++ihit )
@@ -323,8 +293,6 @@ StatusCode LoopOnDaughters::testIPs(const LHCb::Particle* da, const LHCb::RecVer
 StatusCode LoopOnDaughters::trackIsolation(const LHCb::Particle* da, Tuple daTuple, const std::string& head, 
                                            const bool runTest) const
 {
-  //bool runTest = true;
-  
   //### Identify the protoParticle and track associated with the current Particle ###//
   const LHCb::ProtoParticle* daProto = da->proto();
   const LHCb::Track* daTrack = daProto->track();
@@ -353,7 +321,6 @@ StatusCode LoopOnDaughters::trackIsolation(const LHCb::Particle* da, Tuple daTup
   //### Define quantites to be recorded in tuple and set all values to zero ###//
   if (runTest) 
   {
-    //IsolationMeasurement* isol = new IsolationMeasurement(m_numDivs, m_coneMax, "Isol", m_local);
     IsolationMeasurement* isol = new IsolationMeasurement("Isol", m_local);
     isol->Setup(m_numDivs, m_coneMax);
     
@@ -469,8 +436,6 @@ StatusCode LoopOnDaughters::trackIsolation(const LHCb::Particle* da, Tuple daTup
 StatusCode LoopOnDaughters::protoParticleIsolation(const LHCb::Particle* da, Tuple daTuple, const std::string& head, 
                                                    bool runTest) const
 {
-  //bool runTest = false;
-  
   //### Identify the protoParticle associated with the current Particle ###//
   const LHCb::ProtoParticle* daProto = da->proto();
   
@@ -481,7 +446,6 @@ StatusCode LoopOnDaughters::protoParticleIsolation(const LHCb::Particle* da, Tup
   
   if (runTest)
   {
-    //IsolationMeasurement* isol = new IsolationMeasurement(m_numDivs, m_coneMax, "Isol", m_local);
     IsolationMeasurement* isol = new IsolationMeasurement("Isol", m_local);
     isol->Setup(m_numDivs, m_coneMax);
         
@@ -749,8 +713,6 @@ StatusCode LoopOnDaughters::plotDaughter(const LHCb::Particle* da, const LHCb::R
       const LHCb::MCVertex *vert = mcda->primaryVertex(), *vertRef = mcda->originVertex();
       Gaudi::XYZPoint point = vert->position(), pointRef = vertRef->position();
       
-      // SHUST: This no longer compiles as of v35r0
-      //LHCb::Particle ipPart = LHCb::Particle::Particle(mcda->particleID());
       LHCb::Particle ipPart = LHCb::Particle(mcda->particleID());
       
       ipPart.setMeasuredMass(mcda->momentum().M());
@@ -853,7 +815,6 @@ StatusCode LoopOnDaughters::plotDaughter(const LHCb::Particle* da, const LHCb::R
         debug() << "MuonPID IsMuonLoose() = " << mupid->IsMuonLoose() << endmsg;
         
         const LHCb::Track* muT = mupid->muonTrack();
-        //const LHCb::Track* longT = mupid->idTrack();
         
         debug() << "Have retrieved MuonTrack with momentum " << muT->p() << endmsg;
         
@@ -1277,9 +1238,7 @@ StatusCode LoopOnDaughters::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize(); 
   return DaVinciTupleAlgorithm::finalize(); 
-  //return DaVinciAlgorithm::finalize(); 
 } 
 
 //=============================================================================

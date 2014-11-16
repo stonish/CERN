@@ -21,8 +21,6 @@
 #include "MCInterfaces/IMCReconstructible.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT decision ###//
-//#include "Event/HltDecReports.h"
 //### TEST for extrapolator ###//
 #include "TrackInterfaces/ITrackExtrapolator.h"
 //### Extract Run Number and Event (L0) ID ###//
@@ -46,9 +44,7 @@ DECLARE_ALGORITHM_FACTORY( Z2MuMu );
 // Initialise variables defined in header file
 Z2MuMu::Z2MuMu( const std::string& name,
                 ISvcLocator* pSvcLocator)
-  //: DVAlgorithm ( name , pSvcLocator ),
   : DaVinciTupleAlgorithm ( name , pSvcLocator ),
-  //: DaVinciAlgorithm ( name , pSvcLocator ),
     m_runMC(1),                           // Set to 1 to run over MC Data, 0 to skip
     //m_passEvent(1),                      // Automatically run code on this event unless later overridden
     m_errorCode(-1234567),
@@ -76,9 +72,7 @@ Z2MuMu::~Z2MuMu() {}
 // Initialization
 //=============================================================================
 StatusCode Z2MuMu::initialize() {
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
   if ( sc.isFailure() ) return sc;
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
@@ -136,9 +130,7 @@ StatusCode Z2MuMu::execute() {
   
   //### Get Particles ###//
   debug() << "Extracting daughters..." << endmsg;
-  //LHCb::Particle::ConstVector daughters = desktop()->particles();
-  LHCb::Particle::ConstVector daughters = this->i_particles(); // As of v27r0, PhysDesktop no longer exists!                
-  //LHCb::Particle::Range foo = this->particles(); // An alternative to the above?
+  LHCb::Particle::ConstVector daughters = this->i_particles();
 
   if (daughters.size()!=0)
   {
@@ -158,7 +150,7 @@ StatusCode Z2MuMu::execute() {
       if (!sc) return sc;
     }
 
-    //### Test - Call loopOnRec ###//
+    //### Call loopOnRec ###//
     const std::string& strRec = "Rec";
     Rec* rec = new Rec(strRec, m_local);
     Tuple recAllTuple=nTuple("recAllTuple"), hitDistTuple=nTuple("muHitDistTuple"), motherTuple=nTuple("motherTuple"), 
@@ -284,9 +276,7 @@ StatusCode Z2MuMu::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize(); 
   return DaVinciTupleAlgorithm::finalize(); 
-  //return DaVinciAlgorithm::finalize(); 
 } 
 
 //=============================================================================

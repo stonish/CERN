@@ -17,8 +17,6 @@
 #include "Event/MCParticle.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT decision ###//
-//#include "Event/HltDecReports.h"
 #include "HltDecReports.h"
 //### Extract Run Number and Event (L0) ID ###//
 #include "Event/ODIN.h"
@@ -39,56 +37,30 @@ using namespace boost::lambda;
 // Declaration of the Algorithm Factory
 DECLARE_ALGORITHM_FACTORY( Rec );
 
-int Rec::constructorCalls;
-int Rec::destructorCalls;
-
 //=============================================================================
 // Standard constructor, initializes variables
 //=============================================================================
 // Initialise variables defined in header file
 Rec::Rec( const std::string& name, ISvcLocator* pSvcLocator)
-  //: DVAlgorithm ( name , pSvcLocator ),
   : DaVinciTupleAlgorithm ( name , pSvcLocator ),
-  //: DaVinciAlgorithm ( name , pSvcLocator ),
-    m_errorCode(-1234567)//,
-    //m_extra ( new Extra(m_strExtra, pSvcLocator) )
+    m_errorCode(-1234567)
 {
-  debug() << "SHUST: Rec constructor called" << endmsg;
   m_local = pSvcLocator;
-  //const std::string& strExtra = "Extra";
-  //m_extra = new Extra(strExtra, m_local);
-  Rec::constructorCalls++;
-  if (Rec::constructorCalls - Rec::destructorCalls != 1)
-    info() << "SHUST: Rec Constructor misbalance: " << Rec::constructorCalls << " vs " << Rec::destructorCalls << endmsg;
 }
 
 //=============================================================================
 // Destructor
 //=============================================================================
-Rec::~Rec() 
-{
-  debug() << "SHUST: Rec destructor called" << endmsg;
-  Rec::destructorCalls++;
-  if (Rec::constructorCalls - Rec::destructorCalls != 0)
-    info() << "SHUST: Rec Destructor misbalance: " << Rec::constructorCalls << " vs " << Rec::destructorCalls << endmsg;
-
-  //if (m_extra != NULL) delete m_extra;
-} 
+Rec::~Rec() { } 
 
 //=============================================================================
 // Initialization
 //=============================================================================
 StatusCode Rec::initialize() {
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
   if ( sc.isFailure() ) return sc;
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
   info() << "Initialize called for Rec" << endmsg;
-
-  //const std::string& strExtra = "Extra";
-  //m_extra = new Extra(strExtra, m_local);
-  //m_extra->initialize();
 
   return StatusCode::SUCCESS;
 }
@@ -124,10 +96,8 @@ LHCb::Particle::Vector Rec::loopOnRec(const LHCb::Particle::ConstVector& daughte
     
     const std::string& strLoop = "Loop";
     LoopOnDaughters* Loop = new LoopOnDaughters(strLoop, m_local);
-    //const LHCb::RecVertex::Range prims = this->primaryVertices();
     sc = Loop->loopOnDaughters(daughters, prims, recAllTuple, hitDistTuple, runMC);
     delete Loop;
-    //if (!sc) return sc;
     if(!sc) return mothers;
         
     mothers = makeMother(daughters, prims, motherID, motherTuple, candTuple, hitDistTuple, runMC);
@@ -135,7 +105,6 @@ LHCb::Particle::Vector Rec::loopOnRec(const LHCb::Particle::ConstVector& daughte
   }
   else debug() << "### There are no possible muons in the event!! ###" << endmsg;
   
-  //return StatusCode::SUCCESS;
   return mothers;
 }
 
@@ -147,10 +116,6 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
                                        int runMC)
 {
   StatusCode sc = StatusCode::SUCCESS;
-  
-  //### TEST - Cannot save to PhysDesktop outside of main algorithm ###//
-  //### Instead, produce a vector of mothers which will ultimately be returned to the main alogirthm ###//
-  //### Then the main algo can loop over hte vector and save the constituents to the desktop ###//
   LHCb::Particle::Vector mothers;
   
   //### Declare object to call LoopOnDaughters::PlotDaughters ###//
@@ -395,14 +360,13 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
         
         sc = Da->plotDaughter(*imp, prims, motherTuple, hitDistTuple,
                               "_MuPlus_", runMC);
-        //if(!sc) return sc;
         if(!sc) return mothers;
-        else {
+        else 
+        {
           counter("plotDaughter")++;
           sc = Da->plotDaughter(*imm, prims, motherTuple, hitDistTuple,
                                 "_MuMinus_", runMC);
           if (sc) counter("plotDaughter")++;
-          //else return sc;
           else return mothers;
         }
         motherTuple->write();
@@ -435,23 +399,20 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       
       //### Declare the mother to the PhysDesktop ###//
       mothers.push_back( Mother.clone() );
-      //desktop()->keep( &Mother );
-      // As of v27r0, PhysDesktop no longer exists. This is the alternative for keep() and there is no alternative for saveDesktop
-      //markTree(&Mother); 
+
       if (msgLevel(MSG::DEBUG)) debug() << "Saved mother " << Mother.particleID().pid()
                                         << " to desktop" << endmsg;
       
       sc =  Da->plotDaughter(*imp, prims, motherTuple, hitDistTuple,
                              "_MuPlus_", runMC);
       if (sc) counter("plotDaughterTest")++;
-      //if (!sc) return sc;
       if (!sc) return mothers;
-      else {
+      else 
+      {
         counter("plotDaughterTest")++;
         sc = Da->plotDaughter(*imm, prims, motherTuple, hitDistTuple,
                               "_MuMinus_", runMC);
         if (sc) counter("plotDaughterTest")++;
-        //else return sc;
         else return mothers;
       }
       
@@ -466,13 +427,12 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   candTuple->column("EventNumber", (unsigned long long)counter("EventNumber").nEntries());
   candTuple->column("numCandidates", numCandidates);
   candTuple->write();
-  //if (!sc) return sc;
+
   if(!sc) return mothers;
   
   delete Da;                        // Deallocate memory from the heap for LoopOnDaughters class 
   
   return mothers;
-  //return desktop()->saveDesktop();  //Save all mothers // Doesn't work in Rec.cpp // Will no longer work from DV v27r0
 }
 
 //=============================================================================
@@ -482,8 +442,6 @@ StatusCode Rec::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize(); 
   return DaVinciTupleAlgorithm::finalize(); 
-  //return DaVinciAlgorithm::finalize(); 
 } 
 //=============================================================================

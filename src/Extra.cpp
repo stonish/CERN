@@ -22,53 +22,29 @@ using namespace Gaudi::Units;
 // Declaration of the Algorithm Factory
 DECLARE_ALGORITHM_FACTORY( Extra );
 
-//int Extra::constructorCalls;
-//int Extra::destructorCalls;
-
 //=============================================================================
 // Standard constructor, initializes variables
 //=============================================================================
-// Initialise variables defined in header file
 Extra::Extra( const std::string& name, ISvcLocator* pSvcLocator)
-  //: DVAlgorithm ( name , pSvcLocator ),
   : DaVinciTupleAlgorithm ( name , pSvcLocator ),
-  //: DaVinciAlgorithm ( name , pSvcLocator ),
     m_errorCode(-1234567)
 {
-  info() << "SHUST: Extra constructor called" << endmsg;
-  
   m_local = pSvcLocator;
   //m_distTool = tool<IDistanceCalculator>("LoKi::DistanceCalculator");
-
-  //Extra::constructorCalls++;
-  //if (Extra::constructorCalls - Extra::destructorCalls != 1)
-  //info() << "SHUST: Extra Constructor misbalance: " << Extra::constructorCalls << " vs " << Extra::destructorCalls << endmsg;
 }
 
 //=============================================================================
 // Destructor
 //=============================================================================
-Extra::~Extra() 
-{
-  debug() << "SHUST: Extra destructor called" << endmsg;
-  //Extra::destructorCalls++;
-  //if (Extra::constructorCalls - Extra::destructorCalls != 0)
-  //info() << "SHUST: Extra Destructor misbalance: " << Extra::constructorCalls << " vs " << Extra::destructorCalls << endmsg;
-} 
+Extra::~Extra() { } 
 
 //=============================================================================
 // Initialization
 //=============================================================================
 StatusCode Extra::initialize() {
-  info() << "SHUST: Initialize called in Extra.cpp" << endmsg;
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  info() << "SHUST: DaVinciTupleAlgorithm::initialize complete" << endmsg;
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
   if ( sc.isFailure() ) return sc;
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
-  m_distTool = tool<IDistanceCalculator>("LoKi::DistanceCalculator");
-  info() << "SHUST: distTool set" << endmsg;
   return StatusCode::SUCCESS;
 }
 
@@ -358,8 +334,6 @@ StatusCode Extra::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize(); 
   return DaVinciTupleAlgorithm::finalize(); 
-  //return DaVinciAlgorithm::finalize(); 
 } 
 //=============================================================================

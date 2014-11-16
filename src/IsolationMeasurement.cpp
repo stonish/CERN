@@ -4,11 +4,8 @@
 //### Include files ###//
 //#####################// 
 
-// from Gaudi
-#include "GaudiKernel/AlgFactory.h" 
-
-// local
-#include "IsolationMeasurement.h"
+#include "GaudiKernel/AlgFactory.h" // from Gaudi
+#include "IsolationMeasurement.h"   // local
 
 using namespace Gaudi::Units;
 
@@ -21,14 +18,11 @@ using namespace Gaudi::Units;
 // Declaration of the Algorithm Factory
 DECLARE_ALGORITHM_FACTORY( IsolationMeasurement )
 
-
 //=============================================================================
 // Standard constructor, initializes variables
 //=============================================================================
 IsolationMeasurement::IsolationMeasurement(const std::string& name, ISvcLocator* pSvcLocator)
-//: DVAlgorithm ( name , pSvcLocator )
   : DaVinciTupleAlgorithm ( name , pSvcLocator )
-//: DaVinciAlgorithm ( name , pSvcLocator )
 {
   m_local = pSvcLocator;
 }
@@ -42,13 +36,9 @@ IsolationMeasurement::~IsolationMeasurement() {}
 //=============================================================================
 StatusCode IsolationMeasurement::initialize() 
 {
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
   if ( sc.isFailure() ) return sc;
-
   if ( msgLevel(MSG::DEBUG) ) debug() << "==> Initialize" << endmsg;
-
   return StatusCode::SUCCESS;
 }
 
@@ -209,9 +199,7 @@ StatusCode IsolationMeasurement::finalize() {
 
   if ( msgLevel(MSG::DEBUG) ) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize();
   return DaVinciTupleAlgorithm::finalize();
-  //return DaVinciAlgorithm::finalize();
 }
 
 //=============================================================================

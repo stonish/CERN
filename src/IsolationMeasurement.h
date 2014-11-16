@@ -4,9 +4,7 @@
 
 // Include files
 // from DaVinci, this is a specialized GaudiAlgorithm
-//#include "Kernel/DVAlgorithm.h"
 #include "Kernel/DaVinciTupleAlgorithm.h"
-//#include "Kernel/DaVinciAlgorithm.h"
 
 /** @class IsolationMeasurement IsolationMeasurement.h
  *  
@@ -14,16 +12,10 @@
  *  @author  Shane Huston
  *  @date   2012-05-13
  */
-//class IsolationMeasurement : public DVAlgorithm {
 class IsolationMeasurement : public DaVinciTupleAlgorithm {
-//class IsolationMeasurement : public DaVinciAlgorithm {
 public: 
-  /// Standard constructor
   IsolationMeasurement( const std::string& name, ISvcLocator* pSvcLocator );
-  //IsolationMeasurement(int numDivs, int coneMax, const std::string& name, ISvcLocator* pSvcLocator );
-  
   virtual ~IsolationMeasurement( ); ///< Destructor
-
   virtual StatusCode initialize();  ///< Algorithm initialization
   virtual StatusCode execute   ();  ///< Algorithm execution
   virtual StatusCode finalize  ();  ///< Algorithm finalization

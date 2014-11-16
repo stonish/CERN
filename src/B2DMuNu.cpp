@@ -21,8 +21,6 @@
 #include "MCInterfaces/IMCReconstructible.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT decision ###// (Shouldn't need this here any more)
-//#include "Event/HltDecReports.h"
 //### TEST for extrapolator ###//
 #include "TrackInterfaces/ITrackExtrapolator.h"
 //### Extract Run Number and Event (L0) ID ###//
@@ -46,9 +44,7 @@ DECLARE_ALGORITHM_FACTORY( B2DMuNu );
 // Initialise variables defined in header file
 B2DMuNu::B2DMuNu( const std::string& name,
                   ISvcLocator* pSvcLocator)
-  //: DVAlgorithm ( name , pSvcLocator ),
   : DaVinciTupleAlgorithm ( name , pSvcLocator ),
-  //: DaVinciAlgorithm ( name , pSvcLocator ),
     m_runMC(1),                         // Set to 1 to run over MC data, 0 to skip
     m_passEvent(1),                     // Automatically run code on this event unless later overridden
     m_errorCode(-1234567),
@@ -76,9 +72,8 @@ B2DMuNu::~B2DMuNu() {}
 // Initialization
 //=============================================================================
 StatusCode B2DMuNu::initialize() {
-  //StatusCode sc = DVAlgorithm::initialize(); 
   StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
-  //StatusCode sc = DaVinciAlgorithm::initialize(); 
+
   if ( sc.isFailure() ) return sc;
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
@@ -139,9 +134,7 @@ StatusCode B2DMuNu::execute() {
     counter("EventPasses")++;
     
     debug() << "Extracting daughters..." << endmsg;
-    //LHCb::Particle::ConstVector daughters = desktop()->particles();
-    LHCb::Particle::ConstVector daughters = this->i_particles(); // As of v27r0, PhysDesktop no longer exists!
-    //LHCb::Particle::Range foo = this->particles(); // An alternative to the above?
+    LHCb::Particle::ConstVector daughters = this->i_particles();
 
     if (daughters.size()!=0)
     {
@@ -329,9 +322,7 @@ StatusCode B2DMuNu::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  //return DVAlgorithm::finalize(); 
   return DaVinciTupleAlgorithm::finalize(); 
-  //return DaVinciAlgorithm::finalize(); 
 } 
 
 //=============================================================================
