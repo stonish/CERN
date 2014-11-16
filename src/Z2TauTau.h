@@ -7,17 +7,13 @@
 //#####################//
 
 //### from DaVinci, this is a specialized GaudiAlgorithm ###//
-//#include "Kernel/DVAlgorithm.h"
 #include "Kernel/DaVinciTupleAlgorithm.h"
-//#include "Kernel/DaVinciAlgorithm.h"
 //### MC data retrieval ###//
 #include "Event/MCParticle.h"
 //### Is MC Reconstructible? ###//
 #include "MCInterfaces/IMCReconstructible.h"
 //### Extract L0 Decision ###//
 #include "Event/L0DUReport.h"
-//### Extract HLT Decision ###//
-//#include "Event/HltDecReports.h"
 //### Association between MC and Reconstructed###//
 #include "Kernel/Particle2MCLinker.h"
 
@@ -39,11 +35,8 @@
  *  @author Shane Huston
  *  @date   28-09-2009
  */
-//class Z2TauTau : public DVAlgorithm {
 class Z2TauTau : public DaVinciTupleAlgorithm {
-//class Z2TauTau : public DaVinciAlgorithm { 
 public: 
-  /// Standard constructor
   Z2TauTau( const std::string& name, ISvcLocator* pSvcLocator );
 
   virtual ~Z2TauTau( );              ///< Destructor
@@ -70,8 +63,6 @@ private:
   std::string m_motherName;                 //< Mother name
   LHCb::MCParticle::Vector m_mcparts;       //< Vector to store all MCParticles in event
   const LHCb::L0DUReport *m_L0Rep;          //< Get L0 Report
-  //const LHCb::HltDecReports *m_HltRep;      //< Get HLT Report
-  //const LHCb::HltDecReports *m_HltReps;     //< TEST - New method to extract HLT decision
   IMCReconstructible* m_recoTool;           //< Is MC particle reconstructible?  
   int m_coneMax;                            //< Defines cone around muon for isolation criteria
   int m_numDivs;                            //< Defines the number of differen cones to analyse 
