@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!-- Edited By PoolXMLCatalog.py -->
+<!DOCTYPE POOLFILECATALOG SYSTEM "InMemory">
+<POOLFILECATALOG>
+
+
+  <File ID="844017AE-DEB5-DF11-A1C5-0030487D0D36">
+     <physical>
+       <pfn filetype="ROOT_All" name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000003_1.dst?svcClass=lhcbdata"/>
+       <metadata att_name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000003_1.dst?svcClass=lhcbdata" att_value="CERN_MC_M-DST"/>
+     </physical>
+     <logical>
+       <lfn name="/lhcb/MC/2010/DST/00007724/0000/00007724_00000003_1.dst"/>
+     </logical>
+   </File>
+
+  <File ID="62426E71-94B5-DF11-92FC-003048945576">
+     <physical>
+       <pfn filetype="ROOT_All" name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000001_1.dst?svcClass=lhcbdata"/>
+       <metadata att_name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000001_1.dst?svcClass=lhcbdata" att_value="CERN_MC_M-DST"/>
+     </physical>
+     <logical>
+       <lfn name="/lhcb/MC/2010/DST/00007724/0000/00007724_00000001_1.dst"/>
+     </logical>
+   </File>
+
+  <File ID="FCE516F4-94B5-DF11-A3EA-0030487C8DD6">
+     <physical>
+       <pfn filetype="ROOT_All" name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000002_1.dst?svcClass=lhcbdata"/>
+       <metadata att_name="root://castorlhcb.cern.ch//castor/cern.ch/grid/lhcb/MC/2010/DST/00007724/0000/00007724_00000002_1.dst?svcClass=lhcbdata" att_value="CERN_MC_M-DST"/>
+     </physical>
+     <logical>
+       <lfn name="/lhcb/MC/2010/DST/00007724/0000/00007724_00000002_1.dst"/>
+     </logical>
+   </File>
+
+</POOLFILECATALOG>
