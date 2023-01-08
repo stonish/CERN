@@ -1,6 +1,6 @@
 // $Id: Extra.h, 12/04/2011 rhuston Exp $
-#ifndef EXTRA_H 
-#define EXTRA_H 1 
+#ifndef EXTRA_H
+#define EXTRA_H 1
 
 //#####################//
 //### INCLUDE FILES ###//
@@ -23,7 +23,7 @@
 
 /*
  * @class Extra Extra.h
- *  
+ *
  *  Extra algorithms used when real data was first available
  *  Generally the algorithms are not run anymore but are kept in case they may be needed
  *  Algorithmsa focus on muon misidentification and residuals
@@ -32,9 +32,9 @@
  *  @date   12-04-2011
  */
 
-class Extra : public DaVinciTupleAlgorithm 
+class Extra : public DaVinciTupleAlgorithm
 {
-public: 
+public:
   Extra( const std::string& name, ISvcLocator* pSvcLocator );
   virtual ~Extra( );                   ///< Destructor
   virtual StatusCode initialize();     ///< Algorithm initialization
@@ -47,15 +47,15 @@ public:
   StatusCode SignedImpactParameter(const LHCb::Particle*, const Gaudi::XYZPoint&, double&, double&);
   StatusCode muonChamberHits(Tuple);                              // Evaluate hits in the muon chambers
   StatusCode fakeMuon(const LHCb::Particle::ConstVector&, Tuple); // Muon Misidentification (Now replaced with GaudiPython code)
-    
+
 protected:
 
 private:
-  int m_errorCode;                       //< Error code for nTuples 
+  int m_errorCode;                       //< Error code for nTuples
   //int m_coneMax;                         //< Defines maximum cone size around muon for isolation criteria
   //int m_numDivs;                         //< Defines the number of differen cones to analyse
   //int m_muHits;                          //< Flag to run on hits in the muon chambers and calculate distances etc
-  //double m_pi;                           //< Defines pi for calcultion of azimuthal angle difference 
+  //double m_pi;                           //< Defines pi for calcultion of azimuthal angle difference
   IDistanceCalculator *m_distTool;       //< For IP calculation
   ISvcLocator *m_local;                  //< Test to use pSvcLocator to call external local algorithms 
 };
