@@ -2,10 +2,10 @@
 
 //#####################//
 //### Include files ###//
-//#####################// 
+//#####################//
 
 //### from Gaudi ###//
-#include "GaudiKernel/AlgFactory.h" 
+#include "GaudiKernel/AlgFactory.h"
 //### local ###//
 #include "Extra.h"
 //### Work with Muon Detector ###//
@@ -36,13 +36,13 @@ Extra::Extra( const std::string& name, ISvcLocator* pSvcLocator)
 //=============================================================================
 // Destructor
 //=============================================================================
-Extra::~Extra() { } 
+Extra::~Extra() { }
 
 //=============================================================================
 // Initialization
 //=============================================================================
 StatusCode Extra::initialize() {
-  StatusCode sc = DaVinciTupleAlgorithm::initialize(); 
+  StatusCode sc = DaVinciTupleAlgorithm::initialize();
   if ( sc.isFailure() ) return sc;
   if (msgLevel(MSG::DEBUG)) debug() << "==> Initialize" << endmsg;
   return StatusCode::SUCCESS;
@@ -54,8 +54,8 @@ StatusCode Extra::initialize() {
 StatusCode Extra::execute() {
   if (msgLevel(MSG::DEBUG)) debug() << "==> Execute" << endmsg;
   StatusCode sc = StatusCode::SUCCESS ;
-  setFilterPassed(true);   // Mandatory. Set to true if event is accepted. 
-  err() << "Execute phase of Extra.cpp has been called." << endmsg; // Execute phase should not be called 
+  setFilterPassed(true);   // Mandatory. Set to true if event is accepted.
+  err() << "Execute phase of Extra.cpp has been called." << endmsg; // Execute phase should not be called
   return StatusCode::SUCCESS;
 }
 
@@ -101,7 +101,7 @@ StatusCode Extra::ImpactParameterSum(const LHCb::Particle* particle1, const LHCb
     ipe1 = m_errorCode*mm;
     ipeTot = m_errorCode*mm;
   }
-  if (ipe2 == 0) 
+  if (ipe2 == 0)
   {
     debug() << "SHUST: Error calculating IPE for second particle" << endmsg;
     ipe2 = m_errorCode*mm;
@@ -155,8 +155,8 @@ StatusCode Extra::SignedImpactParameter(const LHCb::Particle* particle, const Ga
 StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple fakeTuple)
 {
   StatusCode sc = StatusCode::SUCCESS ;
-  
-  //### For 2009 data, assume all muon candidates are "fake" muons                ###//  
+
+  //### For 2009 data, assume all muon candidates are "fake" muons                ###//
   //### Need to work out teh probability of having a fake muon from the 2009 data ###//
 
   //### Pre-loop to establish total numbers of Muon and MuonLoose candidates ###//
@@ -170,7 +170,7 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
 
   debug() << "In this event we have " << daughters.size() << " particles, " << numMu
           << " muon candidates and " << numMuLoose << " loose muon candidates." << endmsg;
-  
+
   //### Loop on all daughters and plot some details ###//
   int da_i=0, mu_i=0, muLoose_i=0;
   int test1=0, test2=0;
@@ -180,11 +180,11 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
     fakeTuple->column("NumLongTracks",    daughters.size());
     fakeTuple->column("NumMuonCand",      numMu);
     fakeTuple->column("NumMuonLooseCand", numMuLoose);
-    
+
     const LHCb::Particle* da = *ida;
     da_i++;
     fakeTuple->column("LoopID", da_i);
-    
+
     const LHCb::MuonPID* mu = da->proto()->muonPID();
     if(mu->IsMuonLoose())
     {
@@ -193,7 +193,7 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
       fakeTuple->column("MuLooseID", muLoose_i);
     }
     else fakeTuple->column("MuLooseID", 0);
-    
+
     if(mu->IsMuon())
     {
       mu_i++;
@@ -201,10 +201,10 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
       fakeTuple->column("MuID", mu_i);
     }
     else fakeTuple->column("MuID", 0);
-    
+
     if(da_i==daughters.size()) fakeTuple->column("IsFinalLoop",    1);
     else                       fakeTuple->column("IsFinalLoop",    0);
-    
+
     if(numMuLoose==0)
     {
       if (da_i==daughters.size())
@@ -223,7 +223,7 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
       }
       else                       fakeTuple->column("IsFinalMuLoose", 0);
     }
-    
+
     if(numMu==0)
     {
       if (da_i==daughters.size())
@@ -242,32 +242,32 @@ StatusCode Extra::fakeMuon(const LHCb::Particle::ConstVector& daughters, Tuple f
       }
       else                       fakeTuple->column("IsFinalMu",      0);
     }
-    
+
     fakeTuple->column("IsMuon",      da->proto()->muonPID()->IsMuon());
     fakeTuple->column("IsMuonLoose", da->proto()->muonPID()->IsMuonLoose());
     fakeTuple->column("P",           da->p());
     fakeTuple->column("Pt",          da->pt());
     fakeTuple->column("Eta",         da->momentum().Eta());
     fakeTuple->column("Phi",         da->momentum().phi());
-    
+
     fakeTuple->write();
   }
   return StatusCode::SUCCESS;
 }
 
 //=============================================================================
-// TEST - Store all available info for muon chamber hits                                                                  
+// TEST - Store all available info for muon chamber hits
 //=============================================================================
 StatusCode Extra::muonChamberHits(Tuple hitTuple)
 {
   StatusCode sc = StatusCode::SUCCESS ;
-  
+
   //### TEST - extract all muonPIDs, where possible, find muon hits and store coordinates ##//
   //Tuple hitTuple = nTuple("muonHitTuple");
   std::vector<Gaudi::XYZPoint> allMuonHits;
   //Vector to store coordinates of all hits retrieved
   LHCb::MuonPIDs* AllMuPIDs = get<LHCb::MuonPIDs>(LHCb::MuonPIDLocation::Default);
-  
+
   for (LHCb::MuonPIDs::iterator m = AllMuPIDs->begin(); m!=AllMuPIDs->end(); ++m)
   {
     LHCb::MuonPID* mupid = *m;
@@ -277,7 +277,7 @@ StatusCode Extra::muonChamberHits(Tuple hitTuple)
       const LHCb::Track* muT = mupid->muonTrack();
       const LHCb::Track* longT = mupid->idTrack();
       debug() << "Have retrieved MuonTrack with momentum " << muT->p() << endmsg;
-      
+
       LHCb::Track::LHCbIDContainer ids = muT->lhcbIDs();
       for (LHCb::Track::LHCbIDContainer::const_iterator itIDs = ids.begin(); itIDs!=ids.end(); ++itIDs)
       {
@@ -287,16 +287,16 @@ StatusCode Extra::muonChamberHits(Tuple hitTuple)
           LHCb::MuonTileID tileID = itIDs->muonID();
           debug()  << "Muon passes through muon station " << tileID.station()+1 << endmsg;
           debug() << "*** tile position ***" << tileID << endmsg;
-          
+
           //### Access DeMuonDetector class to convert muonTileID to XYZ coordinates ###//
           double x, y, z, dx, dy, dz;
           DeMuonDetector* muonDet;
           muonDet = getDet<DeMuonDetector>(DeMuonLocation::Default);
           muonDet->Tile2XYZ( tileID, x, dx, y, dy, z, dz );
-          
+
           debug() << "The tile's position is (" << x << ", " << y << ", " << z << ")" << endmsg;
           debug() << "and deltas (" << dx << ", " << dy << ", " << dz << ")" << endmsg;
-          
+
           hitTuple->column("Station",   tileID.station()+1);
           hitTuple->column("Region",    tileID.region());
           hitTuple->column("Quarter",   tileID.quarter());
@@ -311,9 +311,9 @@ StatusCode Extra::muonChamberHits(Tuple hitTuple)
           hitTuple->column("dY",        dy);
           hitTuple->column("dZ",        dz);
           hitTuple->column("isGaudi",   0);
-          
+
           hitTuple->write();
-          
+
           //### Store vector of XYZ coordinates for each muonTileID ###//
           Gaudi::XYZPoint test = Gaudi::XYZPoint(x,y,z);
           allMuonHits.push_back(test);
@@ -323,7 +323,7 @@ StatusCode Extra::muonChamberHits(Tuple hitTuple)
     }
     else debug() << "Particle does not satisfy looseMuon criteria." << endmsg;
   }
-  
+
   return StatusCode::SUCCESS;
 }
 
@@ -334,6 +334,6 @@ StatusCode Extra::finalize() {
 
   if (msgLevel(MSG::DEBUG)) debug() << "==> Finalize" << endmsg;
 
-  return DaVinciTupleAlgorithm::finalize(); 
-} 
+  return DaVinciTupleAlgorithm::finalize();
+}
 //=============================================================================
