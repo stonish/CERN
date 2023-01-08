@@ -57,6 +57,8 @@ private:
   //int m_muHits;                          //< Flag to run on hits in the muon chambers and calculate distances etc
   //double m_pi;                           //< Defines pi for calcultion of azimuthal angle difference
   IDistanceCalculator *m_distTool;       //< For IP calculation
-  ISvcLocator *m_local;                  //< Test to use pSvcLocator to call external local algorithms 
+  ISvcLocator *m_local;                  //< Test to use pSvcLocator to call external local algorithms
+  void SetErrorValues(double& ip, double &ipe, double& ipTot, double& ipeTot, int particleID);
+  void SetErrorValues(double& ipTot, double& ipeTot, int particleID)
 };
 #endif // EXTRA_H

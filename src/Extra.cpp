@@ -69,25 +69,16 @@ StatusCode Extra::ImpactParameterSum(const LHCb::Particle* particle1, const LHCb
   StatusCode sc = StatusCode::SUCCESS;
 
   sc = SignedImpactParameter(particle1, vertex, ip1, ipe1);
-  if (!sc) 
+  if (!sc)
   {
-    ip1 = m_errorCode*mm;
-    ipe1 = m_errorCode*mm;
-    ipTot = m_errorCode*mm;
-    ipeTot = m_errorCode*mm;
-    debug() << "SHUST: Error calculating SignedImpactParameter for first particle. Setting all values to " << ip1 << endmsg;
+    SetErrorValues(ip1, ipe1, ipTot, ipeTot, 1);
     return sc;
   }
 
   sc = SignedImpactParameter(particle2, vertex, ip2, ipe2);
-  if (!sc) 
+  if (!sc)
   {
-    debug() << "SHUST: Error calculating SignedImpactParameter for second particle. Setting all values to " << m_errorCode*mm 
-           << endmsg;
-    ip2 = m_errorCode*mm;
-    ipe2 = m_errorCode*mm;
-    ipTot = m_errorCode*mm;
-    ipeTot = m_errorCode*mm;
+    SetErrorValues(ip2, ipe2, ipTot, ipeTot, 2);
     return sc;
   }
 
@@ -97,18 +88,36 @@ StatusCode Extra::ImpactParameterSum(const LHCb::Particle* particle1, const LHCb
   //SHUST: What if ipe1 or ipe2 are less than zero? Previously, set this to error code
   if (ipe1 == 0)
   {
-    debug() << "SHUST: Error calculating IPE for first particle" << endmsg;
-    ipe1 = m_errorCode*mm;
-    ipeTot = m_errorCode*mm;
+    SetErrorValues(ipe1, ipeTot, 1);
   }
   if (ipe2 == 0)
   {
-    debug() << "SHUST: Error calculating IPE for second particle" << endmsg;
-    ipe2 = m_errorCode*mm;
-    ipeTot = m_errorCode*mm;
+    SetErrorValues(ipe2, ipeTot, 2);
   }
 
   return sc;
+}
+
+//=============================================================================
+// Set all values to appropriate error values
+//=============================================================================
+void Extra::SetErrorValues(double& ip, double &ipe, double& ipTot, double& ipeTot, int particleID)
+{
+    ip = m_errorCode*mm;
+    ipe = m_errorCode*mm;
+    ipTot = m_errorCode*mm;
+    ipeTot = m_errorCode*mm;
+    debug() << "SHUST: Error calculating SignedImpactParameter for particle " << particleID << ". Setting all values to " << ip << endmsg;
+}
+
+//=============================================================================
+// Set total values to appropriate error values
+//=============================================================================
+void Extra::SetErrorValues(double& ipTot, double& ipeTot, int particleID)
+{
+    ipTot = m_errorCode*mm;
+    ipeTot = m_errorCode*mm;
+    debug() << "SHUST: Error calculating IPE for particle " << particleID << endmsg;
 }
 
 //=============================================================================
