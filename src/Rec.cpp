@@ -405,7 +405,6 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       
       sc =  Da->plotDaughter(*imp, prims, motherTuple, hitDistTuple,
                              "_MuPlus_", runMC);
-      if (sc) counter("plotDaughterTest")++;
       if (!sc) return mothers;
       else 
       {
