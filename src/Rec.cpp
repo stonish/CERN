@@ -334,7 +334,7 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       
       //### Find Distance of Closest Approach for DiMuons ###//
       double doca=m_errorCode*mm, docaChi2=m_errorCode*mm;
-      sc = distTool->distance(*imp, *imm, doca, docaChi2);
+      sc = distTool->distance(daPlus, daMinus, doca, docaChi2);
       motherTuple->column("rec_DiMuon_DOCA",      doca);
       motherTuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
       */
@@ -342,8 +342,8 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       LHCb::Vertex DaDaVertex;
       LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
       IVertexFit* testTool = tool<IVertexFit>("LoKi::VertexFitter"); // TEST - Tool to fit vertices
-      StatusCode scFit = testTool->fit(*(*imp),*(*imm),DaDaVertex,Mother); // Seems to work but need to verify
-      //StatusCode scFit = vertexFitter()->fit(*(*imp),*(*imm),DaDaVertex,Mother); // Old method in Z2TauTau implementation
+      StatusCode scFit = testTool->fit(*(daPlus),*(daMinus),DaDaVertex,Mother); // Seems to work but need to verify
+      //StatusCode scFit = vertexFitter()->fit(*(daPlus),*(daMinus),DaDaVertex,Mother); // Old method in Z2TauTau implementation
            
       if (!scFit)
       {
@@ -384,8 +384,8 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
 
       //m_extra->ImpactParameterSum(daPlus, daMinus, &DaDaVertex, fitIPplus, fitIPminus,
       //                          fitIPEplus, refitIPminus, fitIPtot, fitIPEtot);
-      //sc = m_extra->SignedImpactParameter(*imp, &DaDaVertex, fitIPplus,  fitIPEplus);  // Calculate for muPlus
-      //sc = m_extra->SignedImpactParameter(*imm, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus 
+      //sc = m_extra->SignedImpactParameter(daPlus, &DaDaVertex, fitIPplus,  fitIPEplus);  // Calculate for muPlus
+      //sc = m_extra->SignedImpactParameter(daMinus, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus 
 
       motherTuple->column("rec_FittedVertex_IP_Total",    fitIPtot);
       motherTuple->column("rec_FittedVertex_IPE_Total",   fitIPEtot);
