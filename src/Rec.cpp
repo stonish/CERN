@@ -118,19 +118,8 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   StatusCode sc = StatusCode::SUCCESS;
   LHCb::Particle::Vector mothers;
   
-  //### Declare object to call LoopOnDaughters::PlotDaughters ###//
-  const std::string& strDa = "Loop";
-  LoopOnDaughters *Da = new LoopOnDaughters(strDa, m_local);
-  
-  //### Store Event Number in sequence###// 
-  counter("EventNumber")++;
-  motherTuple->column("EventNumber", (unsigned long long)counter("EventNumber").nEntries());
-  
-  //### Store Run number and event number (L0 Event ID) ###//
-  const LHCb::ODIN* odin = get<LHCb::ODIN>(LHCb::ODINLocation::Default);
-  const unsigned int runNum = odin->runNumber(), evNum = odin->eventNumber();
-  motherTuple->column("RunNumber", runNum);
-  motherTuple->column("EventID",   evNum);
+  getAndStoreEventNumber(motherTuple);
+  getAndStoreRunNumberAndL0EventID(motherTuple);
   
   //### Seperate daughters into positive and negative ###//
   LHCb::Particle::ConstVector DaPlus, DaMinus;
@@ -213,186 +202,9 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
         delete assoc;
       }
       
-      //#################################################################//
-      //### Total IP for DiMuons with reconstructed PV:               ###//
-      //###  1) If there are no PVs, store an errorCode               ###//
-      //###  2) If there is 1 PV, store the totalIP for this PV       ###//
-      //###  3) If there is more than 1 PV, store the minimum totalIP ###//
-      //###  4) Store the PV coords? Or an ID for the PV used?        ###//
-      //### Refit PV :                                                ###//                 
-      //###  1) Refit the PV used above, excluding the two daughters  ###//
-      //###  2) Calculate new IP for the refitted vertex              ###//
-      //#################################################################// 
-
-      //### Declare some variables ###//
-      /*
-      IDistanceCalculator* distTool = tool<IDistanceCalculator>("LoKi::DistanceCalculator");// Tool to calculate distances
-      double recIPplus = m_errorCode*mm,recIPEplus = m_errorCode*mm, recIPminus = m_errorCode*mm,recIPEminus = m_errorCode*mm;
-      double recIPtot = m_errorCode*mm, recIPEtot = m_errorCode*mm;
-      double refitIPplus  = m_errorCode*mm, refitIPminus  = m_errorCode*mm, refitIPtot  = m_errorCode*mm;
-      double refitIPEplus = m_errorCode*mm, refitIPEminus = m_errorCode*mm, refitIPEtot = m_errorCode*mm;
-      double recPV_x = m_errorCode*mm, recPV_y = m_errorCode*mm, recPV_z = m_errorCode*mm,
-        refitPV_x = m_errorCode*mm, refitPV_y = m_errorCode*mm, refitPV_z = m_errorCode*mm;
-
-      int pvID=-1;                                                // Store ID of which PV was used to calculate IP 
-      LHCb::RecVertex refittedPV;                                 // Placeholder for refitted PV
-      int refitComplete = 1;                                      // Record whether refit of PV has succeeded (=1) or failed (=0)
-      
-      //### Access and loop over reconstructed PVs ###// 
-      //### Note: In Real Data, some events may not have any PVs
-      if (prims.size()>0)
-      {
-        double tmpIPplus, tmpIPEplus, tmpIPminus, tmpIPEminus, tmpIPtot, tmpIPEtot;
-        int tmpPvID=0;
-        for (LHCb::RecVertex::Range::const_iterator ipv = prims.begin(); ipv != prims.end(); ++ipv )
-        {
-          tmpPvID++; // Keep track of which PV is being used
-
-          //### Find IP for muPlus for this PV ###//
-          StatusCode scIPS = m_extra->ImpactParameterSum(daPlus, daMinus, *ipv, 
-          //                                               tmpIPplus, tmpIPminus, tmpIPEplus, tmpIPEminus, tmpIPtot, tmpIPEtot);
-          
-          //StatusCode scPlus  = m_extra->SignedImpactParameter(daPlus, (*ipv), tmpIPplus,  tmpIPEplus);
-          //StatusCode scMinus = m_extra->SignedImpactParameter(daMinus, (*ipv), tmpIPminus, tmpIPEminus);
-          
-          //### If IP's found for both muons, check total IP for this PV and update final result if needed ###//
-          //if (scPlus && scMinus && tmpIPplus+tmpIPminus < abs(recIPplus+recIPminus) )
-          if (scIPS && abs(tmpIPtot) < abs(recIPtot))
-          {
-            recIPplus  = tmpIPplus;
-            recIPminus = tmpIPminus;
-            recIPtot   = tmpIPtot;
-            recIPEtot  = tmpIPEtot;
-            
-            if (tmpIPEplus>0)             
-              recIPEplus  = tmpIPEplus;
-            else if (recIPEplus!=m_errorCode)  
-              recIPEplus  = m_errorCode*mm; // Reset the IPE to an errorCode if no value was returned 
-            if (tmpIPEminus>0)            
-              recIPEminus = tmpIPEminus;
-            else if (recIPEminus!=m_errorCode) 
-              recIPEminus = m_errorCode*mm; // Reset the IPE to an errorCode if no value was returned
-            
-            pvID = tmpPvID;
-          }
-        }
-
-        //### Extract coords of desired PV ###//
-        recPV_x = prims[pvID-1]->position().x();
-        recPV_y = prims[pvID-1]->position().y();
-        recPV_z = prims[pvID-1]->position().z();
-        
-        //### Now that the correct PV has been identified, refit it without the two daughters ###//
-        std::vector<const LHCb::Track*> twoDaughters;
-        twoDaughters.push_back(muTrack1);
-        twoDaughters.push_back(muTrack2);
-        m_pvtool = tool<IPVOfflineTool>("PVOfflineTool");
-        StatusCode scRefit = m_pvtool->reDoSinglePV(prims[pvID-1]->position(), twoDaughters, refittedPV);
-        if (!scRefit) refitComplete = 0;
-        
-        //### Store coords of refitted vertex ###//
-        refitPV_x = refittedPV.position().x();
-        refitPV_y = refittedPV.position().y();
-        refitPV_z = refittedPV.position().z();
-                
-        //### calculate new IP for each daughter based on the refitted PV ###//
-        //m_extra->ImpactParameterSum(daPlus, daMinus, &refittedPV, refitIPplus, refitIPminus, 
-        //                         refitIPEplus, refitIPEminus, refitIPtot, refitIPEtot);
-        //StatusCode scRefitPlus  = m_extra->SignedImpactParameter(daPlus, &refittedPV, refitIPplus,  refitIPEplus);
-        //StatusCode scRefitMinus = m_extra->SignedImpactParameter(daMinus, &refittedPV, refitIPminus, refitIPEminus);
-        //if (!scRefitPlus) {
-        //  refitIPplus = m_errorCode*mm;
-        //  refitIPEplus = m_errorCode*mm;
-        //}
-        //else if (refitIPEplus==0) refitIPEplus = m_errorCode*mm;
-        //if (!scRefitMinus) {
-        //  refitIPminus = m_errorCode*mm;
-        //  refitIPEminus = m_errorCode*mm;
-        //}
-        //else if (refitIPEminus==0) refitIPEminus = m_errorCode*mm;
-      }
-      motherTuple->column("rec_DiMuon_recIP_whichPV",    pvID);
-      motherTuple->column("rec_DiMuon_recPV_X",          recPV_x);
-      motherTuple->column("rec_DiMuon_recPV_Y",          recPV_y);
-      motherTuple->column("rec_DiMuon_recPV_Z",          recPV_z);
-      motherTuple->column("rec_DiMuon_recIP_Total",      recIPtot);
-      motherTuple->column("rec_DiMuon_recIPE_Total",     recIPEtot);
-      motherTuple->column("rec_DiMuon_recIP_MuPlus",     recIPplus);
-      motherTuple->column("rec_DiMuon_recIP_MuMinus",    recIPminus);
-      motherTuple->column("rec_DiMuon_recIPE_MuPlus",    recIPEplus);
-      motherTuple->column("rec_DiMuon_recIPE_MuMinus",   recIPEminus);
-      motherTuple->column("rec_DiMuon_refitComplete",    refitComplete); //Refit can fail while still returning a new PV 
-      motherTuple->column("rec_DiMuon_refitPV_X",        refitPV_x);
-      motherTuple->column("rec_DiMuon_refitPV_Y",        refitPV_y);
-      motherTuple->column("rec_DiMuon_refitPV_Z",        refitPV_z);
-      motherTuple->column("rec_DiMuon_refitIP_Total",    refitIPtot);
-      motherTuple->column("rec_DiMuon_refitIP_MuPlus",   refitIPplus);
-      motherTuple->column("rec_DiMuon_refitIP_MuMinus",  refitIPminus);
-      motherTuple->column("rec_DiMuon_refitIPE_Total",   refitIPEtot);
-      motherTuple->column("rec_DiMuon_refitIPE_MuPlus",  refitIPEplus);
-      motherTuple->column("rec_DiMuon_refitIPE_MuMinus", refitIPEminus);
-      
-      //### Find Distance of Closest Approach for DiMuons ###//
-      double doca=m_errorCode*mm, docaChi2=m_errorCode*mm;
-      sc = distTool->distance(daPlus, daMinus, doca, docaChi2);
-      motherTuple->column("rec_DiMuon_DOCA",      doca);
-      motherTuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
-      */
-      //### Now make the vertex by calling the Vertex Fitter (returns vertex and mother particle) ###//
-      LHCb::Vertex DaDaVertex;
-      LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
-      IVertexFit* testTool = tool<IVertexFit>("LoKi::VertexFitter"); // TEST - Tool to fit vertices
-      StatusCode scFit = testTool->fit(*(daPlus),*(daMinus),DaDaVertex,Mother); // Seems to work but need to verify
-      //StatusCode scFit = vertexFitter()->fit(*(daPlus),*(daMinus),DaDaVertex,Mother); // Old method in Z2TauTau implementation
-           
-      if (!scFit)
-      {
-        //### Output error code and plot any remaining data ###// 
-        Warning("Fit error").ignore();
-        err() << "Error while fitting" << endmsg;
-        motherTuple->column("rec_DiMuon_Chi2",              -m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IP_Total",     m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IPE_Total",    m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IP_MuPlus",    m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IPE_MuPlus",   m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IP_MuMinus",   m_errorCode*mm);
-        motherTuple->column("rec_FittedVertex_IPE_MuMinus",  m_errorCode*mm);
-        
-        sc = Da->plotDaughter(*imp, prims, motherTuple, hitDistTuple,
-                              "_MuPlus_", runMC);
-        if(!sc) return mothers;
-        else 
-        {
-          counter("plotDaughter")++;
-          sc = Da->plotDaughter(*imm, prims, motherTuple, hitDistTuple,
-                                "_MuMinus_", runMC);
-          if (sc) counter("plotDaughter")++;
-          else return mothers;
-        }
-        motherTuple->write();
-        counter ("FitError")++;
-        continue;
-      }
-      
-      if (msgLevel(MSG::DEBUG)) debug() << "Vertex fit at " << DaDaVertex.position()/cm
-                                        << " with chi^2 " << DaDaVertex.chi2() << endmsg;
-      motherTuple->column("rec_DiMuon_Chi2", DaDaVertex.chi2());
-      
-      //### Find IP for dimuon with the fitted vertex  ###//
-      double fitIPplus=m_errorCode*mm, fitIPminus=m_errorCode*mm, fitIPEplus=m_errorCode*mm, fitIPEminus=m_errorCode*mm;
-      double fitIPtot=m_errorCode*mm, fitIPEtot = m_errorCode*mm;
-
-      //m_extra->ImpactParameterSum(daPlus, daMinus, &DaDaVertex, fitIPplus, fitIPminus,
-      //                          fitIPEplus, refitIPminus, fitIPtot, fitIPEtot);
-      //sc = m_extra->SignedImpactParameter(daPlus, &DaDaVertex, fitIPplus,  fitIPEplus);  // Calculate for muPlus
-      //sc = m_extra->SignedImpactParameter(daMinus, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus 
-
-      motherTuple->column("rec_FittedVertex_IP_Total",    fitIPtot);
-      motherTuple->column("rec_FittedVertex_IPE_Total",   fitIPEtot);
-      motherTuple->column("rec_FittedVertex_IP_MuPlus",   fitIPplus);
-      motherTuple->column("rec_FittedVertex_IPE_MuPlus",  fitIPEplus);
-      motherTuple->column("rec_FittedVertex_IP_MuMinus",  fitIPminus);
-      motherTuple->column("rec_FittedVertex_IPE_MuMinus", fitIPEminus);
+      //calculateImpactParametersWithReconstructedPrimaryVertices(prims, daPlus, daMinus, muTrack1, myTrack2, motherTuple);
+      //getAndStoreDiMuonDistanceOfClosestApproach(daPlus, daMinus, motherTuple);
+      fitVertexAndStoreImpactParameterData(motherID, daPlus, daMinus, motherTuple, hitDistTuple);
       
       //### Mandatory. Set to true if event is accepted. ###//
       setFilterPassed(true);
@@ -403,33 +215,15 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       if (msgLevel(MSG::DEBUG)) debug() << "Saved mother " << Mother.particleID().pid()
                                         << " to desktop" << endmsg;
       
-      sc =  Da->plotDaughter(*imp, prims, motherTuple, hitDistTuple,
-                             "_MuPlus_", runMC);
-      if (!sc) return mothers;
-      else 
-      {
-        counter("plotDaughterTest")++;
-        sc = Da->plotDaughter(*imm, prims, motherTuple, hitDistTuple,
-                              "_MuMinus_", runMC);
-        if (sc) counter("plotDaughterTest")++;
-        else return mothers;
-      }
+      bool plottedDaughters = plotDaughters("plotDaughter", daPlus, daMinus, prims, motherTuple, hitDistTuple, runMC);
+      if (!plottedDaughters) return mothers;
       
       motherTuple->write();
       counter ("Mothers")++; //Booked just like plots, counts # of candidates 
     }
   }
 
-  //### Store number of candidates per event in a seperate tuple ###// 
-  debug() << "Event Number: " << counter("EventNumber").nEntries() << endmsg;
-  debug() << "Number of candidates in this event: " << numCandidates << endmsg;
-  candTuple->column("EventNumber", (unsigned long long)counter("EventNumber").nEntries());
-  candTuple->column("numCandidates", numCandidates);
-  candTuple->write();
-
-  if(!sc) return mothers;
-  
-  delete Da;                        // Deallocate memory from the heap for LoopOnDaughters class 
+  storeAndWriteNumberOfCandidatesPerEvent(numCandidates, candTuple);
   
   return mothers;
 }
@@ -444,3 +238,234 @@ StatusCode Rec::finalize() {
   return DaVinciTupleAlgorithm::finalize(); 
 } 
 //=============================================================================
+
+void getAndStoreEventNumber(Tuple tuple)
+{
+  counter("EventNumber")++;
+  tuple->column("EventNumber", (unsigned long long)counter("EventNumber").nEntries());
+}
+
+void getAndStoreRunNumberAndL0EventID(Tuple tuple)
+{
+  const LHCb::ODIN* odin = get<LHCb::ODIN>(LHCb::ODINLocation::Default);
+  const unsigned int runNum = odin->runNumber(), evNum = odin->eventNumber();
+  tuple->column("RunNumber", runNum);
+  tuple->column("EventID",   evNum);
+}
+
+void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
+                              double fitIPtot, double fitIPEtot, Tuple tuple)
+{
+  tuple->column("rec_FittedVertex_IP_Total",    fitIPtot);
+  tuple->column("rec_FittedVertex_IPE_Total",   fitIPEtot);
+  tuple->column("rec_FittedVertex_IP_MuPlus",   fitIPplus);
+  tuple->column("rec_FittedVertex_IPE_MuPlus",  fitIPEplus);
+  tuple->column("rec_FittedVertex_IP_MuMinus",  fitIPminus);
+  tuple->column("rec_FittedVertex_IPE_MuMinus", fitIPEminus);
+}
+
+// TODO: This should really return an object with all of the IP data
+// Then we would have a separate method to write that data
+void calculateImpactParametersWithReconstructedPrimaryVertices(
+        const LHCb::RecVertex::Range prims, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
+        const LHCb::Track* muPlusTrack, const LHCb::Track* muMinusTrack, Tuple tuple)
+{
+  //#################################################################//
+  //### Total IP for DiMuons with reconstructed PV:               ###//
+  //###  1) If there are no PVs, store an errorCode               ###//
+  //###  2) If there is 1 PV, store the totalIP for this PV       ###//
+  //###  3) If there is more than 1 PV, store the minimum totalIP ###//
+  //###  4) Store the PV coords? Or an ID for the PV used?        ###//
+  //### Refit PV :                                                ###//
+  //###  1) Refit the PV used above, excluding the two daughters  ###//
+  //###  2) Calculate new IP for the refitted vertex              ###//
+  //#################################################################//
+
+  //### Declare some variables ###//
+  IDistanceCalculator* distTool = tool<IDistanceCalculator>("LoKi::DistanceCalculator");// Tool to calculate distances
+  double recIPplus = m_errorCode*mm,recIPEplus = m_errorCode*mm, recIPminus = m_errorCode*mm,recIPEminus = m_errorCode*mm;
+  double recIPtot = m_errorCode*mm, recIPEtot = m_errorCode*mm;
+  double refitIPplus  = m_errorCode*mm, refitIPminus  = m_errorCode*mm, refitIPtot  = m_errorCode*mm;
+  double refitIPEplus = m_errorCode*mm, refitIPEminus = m_errorCode*mm, refitIPEtot = m_errorCode*mm;
+  double recPV_x = m_errorCode*mm, recPV_y = m_errorCode*mm, recPV_z = m_errorCode*mm,
+    refitPV_x = m_errorCode*mm, refitPV_y = m_errorCode*mm, refitPV_z = m_errorCode*mm;
+
+  int pvID=-1;                                                // Store ID of which PV was used to calculate IP
+  LHCb::RecVertex refittedPV;                                 // Placeholder for refitted PV
+  int refitComplete = 1;                                      // Record whether refit of PV has succeeded (=1) or failed (=0)
+
+  //### Access and loop over reconstructed PVs ###//
+  //### Note: In Real Data, some events may not have any PVs
+  if (prims.size()>0)
+  {
+    double tmpIPplus, tmpIPEplus, tmpIPminus, tmpIPEminus, tmpIPtot, tmpIPEtot;
+    int tmpPvID=0;
+    for (LHCb::RecVertex::Range::const_iterator ipv = prims.begin(); ipv != prims.end(); ++ipv )
+    {
+      tmpPvID++; // Keep track of which PV is being used
+
+      //### Find IP for muPlus for this PV ###//
+      StatusCode scIPS = m_extra->ImpactParameterSum(muPlus, muMinus, *ipv,
+                                                     tmpIPplus, tmpIPminus, tmpIPEplus, tmpIPEminus, tmpIPtot, tmpIPEtot);
+      //StatusCode scPlus  = m_extra->SignedImpactParameter(muPlus, (*ipv), tmpIPplus,  tmpIPEplus);
+      //StatusCode scMinus = m_extra->SignedImpactParameter(muMinus, (*ipv), tmpIPminus, tmpIPEminus);
+
+      //### If IP's found for both muons, check total IP for this PV and update final result if needed ###//
+      //if (scPlus && scMinus && tmpIPplus+tmpIPminus < abs(recIPplus+recIPminus) )
+      if (scIPS && abs(tmpIPtot) < abs(recIPtot))
+      {
+        recIPplus  = tmpIPplus;
+        recIPminus = tmpIPminus;
+        recIPtot   = tmpIPtot;
+        recIPEtot  = tmpIPEtot;
+
+        if (tmpIPEplus>0)
+          recIPEplus  = tmpIPEplus;
+        else if (recIPEplus!=m_errorCode)
+          recIPEplus  = m_errorCode*mm; // Reset the IPE to an errorCode if no value was returned
+        if (tmpIPEminus>0)
+          recIPEminus = tmpIPEminus;
+        else if (recIPEminus!=m_errorCode)
+          recIPEminus = m_errorCode*mm; // Reset the IPE to an errorCode if no value was returned
+
+        pvID = tmpPvID;
+      }
+    }
+
+    //### Extract coords of desired PV ###//
+    recPV_x = prims[pvID-1]->position().x();
+    recPV_y = prims[pvID-1]->position().y();
+    recPV_z = prims[pvID-1]->position().z();
+
+    //### Now that the correct PV has been identified, refit it without the two daughters ###//
+    std::vector<const LHCb::Track*> twoDaughters;
+    twoDaughters.push_back(muPlusTrack);
+    twoDaughters.push_back(muMinusTrack);
+    m_pvtool = tool<IPVOfflineTool>("PVOfflineTool");
+    StatusCode scRefit = m_pvtool->reDoSinglePV(prims[pvID-1]->position(), twoDaughters, refittedPV);
+    if (!scRefit) refitComplete = 0;
+
+    //### Store coords of refitted vertex ###//
+    refitPV_x = refittedPV.position().x();
+    refitPV_y = refittedPV.position().y();
+    refitPV_z = refittedPV.position().z();
+
+    //### calculate new IP for each daughter based on the refitted PV ###//
+    //m_extra->ImpactParameterSum(muPlus, muMinus, &refittedPV, refitIPplus, refitIPminus,
+    //                         refitIPEplus, refitIPEminus, refitIPtot, refitIPEtot);
+    //StatusCode scRefitPlus  = m_extra->SignedImpactParameter(muPlus, &refittedPV, refitIPplus,  refitIPEplus);
+    //StatusCode scRefitMinus = m_extra->SignedImpactParameter(muMinus, &refittedPV, refitIPminus, refitIPEminus);
+    //if (!scRefitPlus) {
+    //  refitIPplus = m_errorCode*mm;
+    //  refitIPEplus = m_errorCode*mm;
+    //}
+    //else if (refitIPEplus==0) refitIPEplus = m_errorCode*mm;
+    //if (!scRefitMinus) {
+    //  refitIPminus = m_errorCode*mm;
+    //  refitIPEminus = m_errorCode*mm;
+    //}
+    //else if (refitIPEminus==0) refitIPEminus = m_errorCode*mm;
+  }
+
+  tuple->column("rec_DiMuon_recIP_whichPV",    pvID);
+  tuple->column("rec_DiMuon_recPV_X",          recPV_x);
+  tuple->column("rec_DiMuon_recPV_Y",          recPV_y);
+  tuple->column("rec_DiMuon_recPV_Z",          recPV_z);
+  tuple->column("rec_DiMuon_recIP_Total",      recIPtot);
+  tuple->column("rec_DiMuon_recIPE_Total",     recIPEtot);
+  tuple->column("rec_DiMuon_recIP_MuPlus",     recIPplus);
+  tuple->column("rec_DiMuon_recIP_MuMinus",    recIPminus);
+  tuple->column("rec_DiMuon_recIPE_MuPlus",    recIPEplus);
+  tuple->column("rec_DiMuon_recIPE_MuMinus",   recIPEminus);
+  tuple->column("rec_DiMuon_refitComplete",    refitComplete); //Refit can fail while still returning a new PV
+  tuple->column("rec_DiMuon_refitPV_X",        refitPV_x);
+  tuple->column("rec_DiMuon_refitPV_Y",        refitPV_y);
+  tuple->column("rec_DiMuon_refitPV_Z",        refitPV_z);
+  tuple->column("rec_DiMuon_refitIP_Total",    refitIPtot);
+  tuple->column("rec_DiMuon_refitIP_MuPlus",   refitIPplus);
+  tuple->column("rec_DiMuon_refitIP_MuMinus",  refitIPminus);
+  tuple->column("rec_DiMuon_refitIPE_Total",   refitIPEtot);
+  tuple->column("rec_DiMuon_refitIPE_MuPlus",  refitIPEplus);
+  tuple->column("rec_DiMuon_refitIPE_MuMinus", refitIPEminus);
+}
+
+void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  double doca=m_errorCode*mm, docaChi2=m_errorCode*mm;
+  sc = distTool->distance(muPlus, muMinus, doca, docaChi2);
+  tuple->column("rec_DiMuon_DOCA",      doca);
+  tuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
+}
+
+void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb::Particle* muPlus,
+                                          const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple)
+{
+  //### Now make the vertex by calling the Vertex Fitter (returns vertex and mother particle) ###//
+  LHCb::Vertex DaDaVertex;
+  LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
+  double fitIPplus=m_errorCode*mm, fitIPminus=m_errorCode*mm, fitIPEplus=m_errorCode*mm, fitIPEminus=m_errorCode*mm;
+  double fitIPtot=m_errorCode*mm, fitIPEtot = m_errorCode*mm;
+  IVertexFit* testTool = tool<IVertexFit>("LoKi::VertexFitter"); // TEST - Tool to fit vertices
+  StatusCode scFit = testTool->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Seems to work but need to verify
+  //StatusCode scFit = vertexFitter()->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Old method in Z2TauTau implementation
+
+  if (!scFit)
+  {
+    //### Output error code and plot any remaining data ###//
+    Warning("Fit error").ignore();
+    err() << "Error while fitting" << endmsg;
+    motherTuple->column("rec_DiMuon_Chi2", -m_errorCode*mm);
+    storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
+    bool plottedDaughters = plotDaughters("plotDaughter", muPlus, muMinus, prims, motherTuple, hitDistTuple, runMC);
+    if (!plottedDaughters) return mothers;
+
+    motherTuple->write();
+    counter ("FitError")++;
+    continue;
+  }
+
+  if (msgLevel(MSG::DEBUG)) debug() << "Vertex fit at " << DaDaVertex.position()/cm
+                                    << " with chi^2 " << DaDaVertex.chi2() << endmsg;
+  motherTuple->column("rec_DiMuon_Chi2", DaDaVertex.chi2());
+
+  //### Find IP for dimuon with the fitted vertex  ###//
+  //m_extra->ImpactParameterSum(muPlus, muMinus, &DaDaVertex, fitIPplus, fitIPminus,
+  //                          fitIPEplus, refitIPminus, fitIPtot, fitIPEtot);
+  //sc = m_extra->SignedImpactParameter(muPlus, &DaDaVertex, fitIPplus,  fitIPEplus);  // Calculate for muPlus
+  //sc = m_extra->SignedImpactParameter(muMinus, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus
+
+  storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
+}
+
+bool plotDaughters(const std::string& counterName, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
+                   const LHCb::RecVertex::Range prims, Tuple motherTuple, Tuple hitDistTuple, int runMC)
+{
+  // Note: It may be inefficient to reinitialise (and delete) this for each DiMuon pair
+  // It may be better to create a private m_Da variable and initialise it once
+  // It looks like I've tried to do that before for IsolationMeasurement and for Extra and may require usage of #ifndef
+  // It may be better not to try to do this until I'm able to access the DaVinci compiler again
+  const std::string& strDa = "Loop";
+  LoopOnDaughters *Da = new LoopOnDaughters(strDa, m_local);
+
+  sc = Da->plotDaughter(muPlus, prims, motherTuple, hitDistTuple,
+                              "_MuPlus_", runMC);
+  if(!sc) return false;
+  counter(counterName)++;
+
+  sc = Da->plotDaughter(muMinus, prims, motherTuple, hitDistTuple,
+                        "_MuMinus_", runMC);
+  if (!sc) return return false;
+  counter(counterName)++;
+
+  delete Da; // Deallocate memory from the heap for LoopOnDaughters class
+  return true;
+}
+
+void storeAndWriteNumberOfCandidatesPerEvent(int numCandidates, Tuple tuple)
+{
+  debug() << "Event Number: " << counter("EventNumber").nEntries() << endmsg;
+  debug() << "Number of candidates in this event: " << numCandidates << endmsg;
+  tuple->column("EventNumber", (unsigned long long)counter("EventNumber").nEntries());
+  tuple->column("numCandidates", numCandidates);
+  tuple->write();
+}

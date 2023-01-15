@@ -7,8 +7,8 @@
 //#####################//
 
 // Local
-#ifndef EXTRA_H
-#include "Extra.h"
+#ifndef EXTRA_H // TODO: Assuming we want to include Extra.h, should this be #ifdef instead?
+#include "Extra.h" // TODO: It doesn't lok like we're using Extra here. Can this be removed? (Extra is referenced in some commented out code)
 #endif
 
 //### from DaVinci, this is a specialized GaudiAlgorithm ###//
@@ -60,5 +60,19 @@ private:
   int m_errorCode;                       //< Error code for nTuples
   ISvcLocator *m_local;                  //< Test to use pSvcLocator to call external local algorithms 
   IPVOfflineTool* m_pvtool;              //< Tool to refit a PV excluding specified tracks
+
+  void getAndStoreEventNumber(Tuple tuple);
+  void getAndStoreRunNumberAndL0EventID(Tuple tuple);
+  void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
+                                double fitIPtot, double fitIPEtot, Tuple tuple);
+  void calculateImpactParametersWithReconstructedPrimaryVertices(const LHCb::RecVertex::Range prims,
+                                const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
+                                const LHCb::Track* muPlusTrack, const LHCb::Track* muMinusTrack, Tuple tuple);
+  void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple);
+  void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb::Particle* muPlus,
+                                            const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple);
+  bool plotDaughters(const std::string& counterName, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
+                     const LHCb::RecVertex::Range prims, Tuple motherTuple, Tuple hitDistTuple, int runMC);
+  void storeAndWriteNumberOfCandidatesPerEvent(int numCandidates, Tuple tuple);
 };
 #endif // REC_H
