@@ -122,12 +122,16 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   getAndStoreRunNumberAndL0EventID(motherTuple);
   
   //### Seperate daughters into positive and negative ###//
-  LHCb::Particle::ConstVector DaPlus, DaMinus;
-  size_t nDaughters = DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)<0, DaMinus);
+  LHCb::Particle::ConstVector DaPluses, DaMinuses;
+  size_t nDaughters = DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)<0, DaMinuses);
   debug() << "Number of muMinus is " << nDaughters << endmsg;
-  if (nDaughters>0) nDaughters += DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)>0, DaPlus);
+  if (nDaughters>0) // TODO: Is this necessary? Why would this be negative? If this can happen, shouldn't it be treated as an error instead?
+  {
+    nDaughters += DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)>0, DaPluses);
+  }
   debug() << "Total number of muons is " << nDaughters << endmsg;
-  debug() << "Total number of dimuons is " << DaPlus.size()*DaMinus.size() << "." << endmsg;
+  debug() << "Total number of dimuons is " << DaPluses.size()*DaMinuses.size() << "." << endmsg;
+
   motherTuple->column("numMuons", (unsigned long long)nDaughters);
   motherTuple->column("numPVs",   (unsigned long long)prims.size());
   
@@ -135,14 +139,14 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   
   LHCb::Track::Vector longTracks = extractAllLongTracksForEvent();
   
-  //### Loop over DaPlus and DaMinus ###// 
-  for (LHCb::Particle::ConstVector::const_iterator imp = DaPlus.begin() ;
-       imp != DaPlus.end(); ++imp )
+  //### Loop over all dimuons ###//
+  for (LHCb::Particle::ConstVector::const_iterator imp = DaPluses.begin() ;
+       imp != DaPluses.end(); ++imp )
   {
     const LHCb::Particle* daPlus = *imp;
     
-    for (LHCb::Particle::ConstVector::const_iterator imm = DaMinus.begin();
-         imm != DaMinus.end(); ++imm)
+    for (LHCb::Particle::ConstVector::const_iterator imm = DaMinuses.begin();
+         imm != DaMinuses.end(); ++imm)
     {
       const LHCb::Particle* daMinus = *imm;
 
