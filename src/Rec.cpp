@@ -150,21 +150,8 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
 
       getAndStoreDiMuonInvariantMass(daPlus, daMinus, motherTuple);
       storeNumberOfMuonsAndLongTracksPerEvent(nDaughters, longTracks, motherTuple);
+      getAndStoreMomentumOfOtherTracks(daPlus, daMinus, longTracks, Tuple tuple);
 
-      //### Identify the tracks associated with the current dimuon pair ###// 
-      const LHCb::Track* muTrack1 = daPlus->proto()->track();
-      const LHCb::Track* muTrack2 = daMinus->proto()->track();
-      
-      //### Loop over all other tracks in event ###//
-      Gaudi::XYZVector otherLongTracks_P = Gaudi::XYZVector(0, 0, 0);
-      for ( LHCb::Track::Vector::iterator itt = longTracks.begin(); itt != longTracks.end(); ++itt)
-      {
-        LHCb::Track* trk = *itt;
-        if (trk != muTrack1 && trk != muTrack2) otherLongTracks_P += trk->momentum();
-      }
-      motherTuple->column("otherLongTracks_P",  otherLongTracks_P.R());
-      motherTuple->column("otherLongTracks_Pt", otherLongTracks_P.R()*sin(otherLongTracks_P.theta()));
-      
       //### Count number of candidates per event ###//
       numCandidates++;
       motherTuple->column("CandidateNumber", numCandidates);
@@ -276,6 +263,23 @@ void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vec
 {
   tuple->column("numMuonsPerEvent",      (unsigned long long)nDaughters);
   tuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
+}
+
+void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, LHCb::Track::Vector longTracks, Tuple tuple);
+{
+  //### Identify the tracks associated with the current dimuon pair ###//
+  const LHCb::Track* muTrack1 = muPlus->proto()->track();
+  const LHCb::Track* muTrack2 = muMinus->proto()->track();
+
+  //### Loop over all other tracks in event ###//
+  Gaudi::XYZVector otherLongTracks_P = Gaudi::XYZVector(0, 0, 0);
+  for ( LHCb::Track::Vector::iterator itt = longTracks.begin(); itt != longTracks.end(); ++itt)
+  {
+    LHCb::Track* trk = *itt;
+    if (trk != muTrack1 && trk != muTrack2) otherLongTracks_P += trk->momentum();
+  }
+  tuple->column("otherLongTracks_P",  otherLongTracks_P.R());
+  tuple->column("otherLongTracks_Pt", otherLongTracks_P.R()*sin(otherLongTracks_P.theta()));
 }
 
 void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
