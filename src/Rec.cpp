@@ -166,7 +166,13 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
 
       //calculateImpactParametersWithReconstructedPrimaryVertices(prims, daPlus, daMinus, muTrack1, myTrack2, motherTuple);
       //getAndStoreDiMuonDistanceOfClosestApproach(daPlus, daMinus, motherTuple);
-      fitVertexAndStoreImpactParameterData(Mother, daPlus, daMinus, motherTuple, hitDistTuple);
+      bool fitSuccess = fitVertexAndStoreImpactParameterData(Mother, daPlus, daMinus, motherTuple, hitDistTuple);
+      if (!fitSuccess)
+      {
+        motherTuple->write();
+        counter ("FitError")++;
+        continue;
+      }
       
       //### Mandatory. Set to true if event is accepted. ###//
       setFilterPassed(true);
@@ -435,7 +441,7 @@ void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, co
   tuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
 }
 
-void fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Particle* muPlus,
+bool fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Particle* muPlus,
                                           const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple)
 {
   //### Now make the vertex by calling the Vertex Fitter (returns vertex and mother particle) ###//
@@ -454,11 +460,7 @@ void fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Par
     motherTuple->column("rec_DiMuon_Chi2", -m_errorCode*mm);
     storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
     bool plottedDaughters = plotDaughters("plotDaughter", muPlus, muMinus, prims, motherTuple, hitDistTuple, runMC);
-    if (!plottedDaughters) return mothers;
-
-    motherTuple->write();
-    counter ("FitError")++;
-    continue;
+    if (!plottedDaughters) return false;
   }
 
   if (msgLevel(MSG::DEBUG)) debug() << "Vertex fit at " << DaDaVertex.position()/cm
@@ -472,6 +474,8 @@ void fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Par
   //sc = m_extra->SignedImpactParameter(muMinus, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus
 
   storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
+
+  return true;
 }
 
 bool plotDaughters(const std::string& counterName, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
