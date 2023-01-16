@@ -148,12 +148,8 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
     {
       const LHCb::Particle* daMinus = *imm;
 
-      //### Find and plot diparticle mass of reconstructed particles ###// 
-      Gaudi::LorentzVector twoDa = daPlus->momentum() + daMinus->momentum();
-      debug() << "Rec two daughter mass is " << twoDa.M()/GeV << " GeV" << endmsg;
-      motherTuple->column("rec_DiMuon_InvMass",    twoDa.M());
-      motherTuple->column("numMuonsPerEvent",      (unsigned long long)nDaughters);
-      motherTuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
+      storeNumberOfMuonsAndLongTracksPerEvent(nDaughters, longTracks, motherTuple);
+      getAndStoreDiMuonInvariantMass(daPlus, daMinus, motherTuple);
       
       //### Identify the tracks associated with the current dimuon pair ###// 
       const LHCb::Track* muTrack1 = daPlus->proto()->track();
@@ -246,6 +242,14 @@ void storeNumberOfMuonsAndPrimaryVertices(size_t nDaughters, const LHCb::RecVert
   tuple->column("numMuons", (unsigned long long)nDaughters);
   tuple->column("numPVs",   (unsigned long long)prims.size());
 }
+
+void getAndStoreDiMuonInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  Gaudi::LorentzVector diMuonMomentum = muPlus->momentum() + muMinus->momentum();
+  debug() << "Rec two daughter mass is " << diMuonMomentum.M()/GeV << " GeV" << endmsg;
+  tuple->column("rec_DiMuon_InvMass", diMuonMomentum.M());
+}
+
 // This will be used to find the total energy and Pt of the event
 LHCb::Track::Vector extractAllLongTracksForEvent()
 {
@@ -266,6 +270,12 @@ LHCb::Track::Vector extractAllLongTracksForEvent()
   else info() << "There are no Tracks in the default location" << endmsg;
 
   return longTracks;
+}
+
+void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vector longTracks, Tuple motherTuple)
+{
+  tuple->column("numMuonsPerEvent",      (unsigned long long)nDaughters);
+  tuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
 }
 
 void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
