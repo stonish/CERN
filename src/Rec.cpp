@@ -148,9 +148,9 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
     {
       const LHCb::Particle* daMinus = *imm;
 
-      storeNumberOfMuonsAndLongTracksPerEvent(nDaughters, longTracks, motherTuple);
       getAndStoreDiMuonInvariantMass(daPlus, daMinus, motherTuple);
-      
+      storeNumberOfMuonsAndLongTracksPerEvent(nDaughters, longTracks, motherTuple);
+
       //### Identify the tracks associated with the current dimuon pair ###// 
       const LHCb::Track* muTrack1 = daPlus->proto()->track();
       const LHCb::Track* muTrack2 = daMinus->proto()->track();
@@ -243,13 +243,6 @@ void storeNumberOfMuonsAndPrimaryVertices(size_t nDaughters, const LHCb::RecVert
   tuple->column("numPVs",   (unsigned long long)prims.size());
 }
 
-void getAndStoreDiMuonInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
-{
-  Gaudi::LorentzVector diMuonMomentum = muPlus->momentum() + muMinus->momentum();
-  debug() << "Rec two daughter mass is " << diMuonMomentum.M()/GeV << " GeV" << endmsg;
-  tuple->column("rec_DiMuon_InvMass", diMuonMomentum.M());
-}
-
 // This will be used to find the total energy and Pt of the event
 LHCb::Track::Vector extractAllLongTracksForEvent()
 {
@@ -270,6 +263,13 @@ LHCb::Track::Vector extractAllLongTracksForEvent()
   else info() << "There are no Tracks in the default location" << endmsg;
 
   return longTracks;
+}
+
+void getAndStoreDiMuonInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  Gaudi::LorentzVector diMuonMomentum = muPlus->momentum() + muMinus->momentum();
+  debug() << "Rec two daughter mass is " << diMuonMomentum.M()/GeV << " GeV" << endmsg;
+  tuple->column("rec_DiMuon_InvMass", diMuonMomentum.M());
 }
 
 void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vector longTracks, Tuple motherTuple)
