@@ -133,21 +133,7 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   
   int numCandidates = 0;
   
-  //### Extract all tracks in the event (used to find total energy, Pt of event) ###// 
-  LHCb::Track::Vector longTracks;
-  longTracks.clear();
-  LHCb::Tracks* kotherTracks;
-  
-  if (exist<LHCb::Tracks>(LHCb::TrackLocation::Default))
-  {
-    kotherTracks = get<LHCb::Tracks>(LHCb::TrackLocation::Default);
-    LHCb::Tracks::iterator it;
-    for (it = kotherTracks->begin(); it != kotherTracks->end(); ++it){
-      LHCb::Track* test = *it;
-      if (test->type()==3) longTracks.push_back(*it);
-    }
-  }
-  else info() << "There are no Tracks in the default location" << endmsg;
+  LHCb::Track::Vector longTracks = extractAllLongTracksForEvent();
   
   //### Loop over DaPlus and DaMinus ###// 
   for (LHCb::Particle::ConstVector::const_iterator imp = DaPlus.begin() ;
@@ -251,6 +237,28 @@ void getAndStoreRunNumberAndL0EventID(Tuple tuple)
   const unsigned int runNum = odin->runNumber(), evNum = odin->eventNumber();
   tuple->column("RunNumber", runNum);
   tuple->column("EventID",   evNum);
+}
+
+// This will be used to find the total energy and Pt of the event
+LHCb::Track::Vector extractAllLongTracksForEvent()
+{
+  LHCb::Track::Vector longTracks;
+  longTracks.clear();
+
+  LHCb::Tracks* allTracks;
+
+  if (exist<LHCb::Tracks>(LHCb::TrackLocation::Default))
+  {
+    allTracks = get<LHCb::Tracks>(LHCb::TrackLocation::Default);
+    LHCb::Tracks::iterator it;
+    for (it = allTracks->begin(); it != allTracks->end(); ++it){
+      LHCb::Track* track = *it;
+      if (track->type()==3) longTracks.push_back(track);
+    }
+  }
+  else info() << "There are no Tracks in the default location" << endmsg;
+
+  return longTracks;
 }
 
 void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
