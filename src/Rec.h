@@ -63,6 +63,12 @@ private:
 
   void getAndStoreEventNumber(Tuple tuple);
   void getAndStoreRunNumberAndL0EventID(Tuple tuple);
+  void storeNumberOfMuonsAndPrimaryVertices(size_t nDaughters, const LHCb::RecVertex::Range prims, Tuple tuple);
+  LHCb::Track::Vector extractAllLongTracksForEvent();
+  void getAndStoreDiMuonInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple);
+  void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vector longTracks, Tuple motherTuple);
+  void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, LHCb::Track::Vector longTracks, Tuple tuple);
+  void getAndStoreMonteCarloInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple);
   void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
                                 double fitIPtot, double fitIPEtot, Tuple tuple);
   void calculateImpactParametersWithReconstructedPrimaryVertices(const LHCb::RecVertex::Range prims,

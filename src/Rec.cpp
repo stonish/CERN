@@ -262,7 +262,7 @@ void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vec
   tuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
 }
 
-void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, LHCb::Track::Vector longTracks, Tuple tuple);
+void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, LHCb::Track::Vector longTracks, Tuple tuple)
 {
   //### Identify the tracks associated with the current dimuon pair ###//
   const LHCb::Track* muTrack1 = muPlus->proto()->track();
