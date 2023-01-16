@@ -159,18 +159,7 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       //### Find and plot diparticle mass of associated MC particles (if MC data is available) ###//
       if (runMC==1)
       {
-        debug() << "Finding Invariant mass of MC DiMuon associated with reconstructed signal." << endmsg;
-        Particle2MCLinker* assoc = new Particle2MCLinker(this, Particle2MCMethod::Links, ""); // Retrieves associated MC particle
-        const LHCb::MCParticle *mcp = assoc->firstMCP(daPlus), *mcm = assoc->firstMCP(daMinus);
-        Gaudi::LorentzVector twoDaMC;
-        if (mcp !=NULL && mcm != NULL)
-        {
-          twoDaMC = (mcp)->momentum() + (mcm)->momentum();
-          motherTuple->column("mc_DiMuon_InvMass", twoDaMC.M());
-        }
-        else motherTuple->column("mc_DiMuon_InvMass", m_errorCode*MeV);
-        
-        delete assoc;
+        getAndStoreMonteCarloInvariantMass(daPlus, daMinus, motherTuple);
       }
       
       //calculateImpactParametersWithReconstructedPrimaryVertices(prims, daPlus, daMinus, muTrack1, myTrack2, motherTuple);
@@ -280,6 +269,24 @@ void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::
   }
   tuple->column("otherLongTracks_P",  otherLongTracks_P.R());
   tuple->column("otherLongTracks_Pt", otherLongTracks_P.R()*sin(otherLongTracks_P.theta()));
+}
+
+void getAndStoreMonteCarloInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  debug() << "Finding Invariant mass of MC DiMuon associated with reconstructed signal." << endmsg;
+
+  Particle2MCLinker* assoc = new Particle2MCLinker(this, Particle2MCMethod::Links, ""); // Retrieves associated MC particle
+  const LHCb::MCParticle *mcPlus = assoc->firstMCP(muPlus), *mcMinus = assoc->firstMCP(muMinus);
+
+  Gaudi::LorentzVector diMuonMomentum;
+  if (mcPlus !=NULL && mcMinus != NULL)
+  {
+    diMuonMomentum = (mcPlus)->momentum() + (mcMinus)->momentum();
+    tuple->column("mc_DiMuon_InvMass", diMuonMomentum.M());
+  }
+  else tuple->column("mc_DiMuon_InvMass", m_errorCode*MeV);
+
+  delete assoc;
 }
 
 void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
