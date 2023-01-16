@@ -132,11 +132,9 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   debug() << "Total number of muons is " << nDaughters << endmsg;
   debug() << "Total number of dimuons is " << DaPluses.size()*DaMinuses.size() << "." << endmsg;
 
-  motherTuple->column("numMuons", (unsigned long long)nDaughters);
-  motherTuple->column("numPVs",   (unsigned long long)prims.size());
+  storeNumberOfMuonsAndPrimaryVertices(nDaughters, prims, motherTuple);
   
   int numCandidates = 0;
-  
   LHCb::Track::Vector longTracks = extractAllLongTracksForEvent();
   
   //### Loop over all dimuons ###//
@@ -243,6 +241,11 @@ void getAndStoreRunNumberAndL0EventID(Tuple tuple)
   tuple->column("EventID",   evNum);
 }
 
+void storeNumberOfMuonsAndPrimaryVertices(size_t nDaughters, const LHCb::RecVertex::Range prims, Tuple tuple)
+{
+  tuple->column("numMuons", (unsigned long long)nDaughters);
+  tuple->column("numPVs",   (unsigned long long)prims.size());
+}
 // This will be used to find the total energy and Pt of the event
 LHCb::Track::Vector extractAllLongTracksForEvent()
 {
