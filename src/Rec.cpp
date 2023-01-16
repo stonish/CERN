@@ -122,65 +122,36 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
   getAndStoreRunNumberAndL0EventID(motherTuple);
   
   //### Seperate daughters into positive and negative ###//
-  LHCb::Particle::ConstVector DaPlus, DaMinus;
-  size_t nDaughters = DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)<0, DaMinus);
+  LHCb::Particle::ConstVector DaPluses, DaMinuses;
+  size_t nDaughters = DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)<0, DaMinuses);
   debug() << "Number of muMinus is " << nDaughters << endmsg;
-  if (nDaughters>0) nDaughters += DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)>0, DaPlus);
+  if (nDaughters>0) // TODO: Is this necessary? Why would this be negative? If this can happen, shouldn't it be treated as an error instead?
+  {
+    nDaughters += DaVinci::filter(daughters, bind(&LHCb::Particle::charge,_1)>0, DaPluses);
+  }
   debug() << "Total number of muons is " << nDaughters << endmsg;
-  debug() << "Total number of dimuons is " << DaPlus.size()*DaMinus.size() << "." << endmsg;
-  motherTuple->column("numMuons", (unsigned long long)nDaughters);
-  motherTuple->column("numPVs",   (unsigned long long)prims.size());
+  debug() << "Total number of dimuons is " << DaPluses.size()*DaMinuses.size() << "." << endmsg;
+
+  storeNumberOfMuonsAndPrimaryVertices(nDaughters, prims, motherTuple);
   
   int numCandidates = 0;
+  LHCb::Track::Vector longTracks = extractAllLongTracksForEvent();
   
-  //### Extract all tracks in the event (used to find total energy, Pt of event) ###// 
-  LHCb::Track::Vector longTracks;
-  longTracks.clear();
-  LHCb::Tracks* kotherTracks;
-  
-  if (exist<LHCb::Tracks>(LHCb::TrackLocation::Default))
-  {
-    kotherTracks = get<LHCb::Tracks>(LHCb::TrackLocation::Default);
-    LHCb::Tracks::iterator it;
-    for (it = kotherTracks->begin(); it != kotherTracks->end(); ++it){
-      LHCb::Track* test = *it;
-      if (test->type()==3) longTracks.push_back(*it);
-    }
-  }
-  else info() << "There are no Tracks in the default location" << endmsg;
-  
-  //### Loop over DaPlus and DaMinus ###// 
-  for (LHCb::Particle::ConstVector::const_iterator imp = DaPlus.begin() ;
-       imp != DaPlus.end(); ++imp )
+  //### Loop over all dimuons ###//
+  for (LHCb::Particle::ConstVector::const_iterator imp = DaPluses.begin() ;
+       imp != DaPluses.end(); ++imp )
   {
     const LHCb::Particle* daPlus = *imp;
     
-    for (LHCb::Particle::ConstVector::const_iterator imm = DaMinus.begin();
-         imm != DaMinus.end(); ++imm)
+    for (LHCb::Particle::ConstVector::const_iterator imm = DaMinuses.begin();
+         imm != DaMinuses.end(); ++imm)
     {
       const LHCb::Particle* daMinus = *imm;
 
-      //### Find and plot diparticle mass of reconstructed particles ###// 
-      Gaudi::LorentzVector twoDa = daPlus->momentum() + daMinus->momentum();
-      debug() << "Rec two daughter mass is " << twoDa.M()/GeV << " GeV" << endmsg;
-      motherTuple->column("rec_DiMuon_InvMass",    twoDa.M());
-      motherTuple->column("numMuonsPerEvent",      (unsigned long long)nDaughters);
-      motherTuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
-      
-      //### Identify the tracks associated with the current dimuon pair ###// 
-      const LHCb::Track* muTrack1 = daPlus->proto()->track();
-      const LHCb::Track* muTrack2 = daMinus->proto()->track();
-      
-      //### Loop over all other tracks in event ###//
-      Gaudi::XYZVector otherLongTracks_P = Gaudi::XYZVector(0, 0, 0);
-      for ( LHCb::Track::Vector::iterator itt = longTracks.begin(); itt != longTracks.end(); ++itt)
-      {
-        LHCb::Track* trk = *itt;
-        if (trk != muTrack1 && trk != muTrack2) otherLongTracks_P += trk->momentum();
-      }
-      motherTuple->column("otherLongTracks_P",  otherLongTracks_P.R());
-      motherTuple->column("otherLongTracks_Pt", otherLongTracks_P.R()*sin(otherLongTracks_P.theta()));
-      
+      getAndStoreDiMuonInvariantMass(daPlus, daMinus, motherTuple);
+      storeNumberOfMuonsAndLongTracksPerEvent(nDaughters, longTracks, motherTuple);
+      getAndStoreMomentumOfOtherTracks(daPlus, daMinus, longTracks, Tuple tuple);
+
       //### Count number of candidates per event ###//
       numCandidates++;
       motherTuple->column("CandidateNumber", numCandidates);
@@ -188,23 +159,20 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
       //### Find and plot diparticle mass of associated MC particles (if MC data is available) ###//
       if (runMC==1)
       {
-        debug() << "Finding Invariant mass of MC DiMuon associated with reconstructed signal." << endmsg;
-        Particle2MCLinker* assoc = new Particle2MCLinker(this, Particle2MCMethod::Links, ""); // Retrieves associated MC particle
-        const LHCb::MCParticle *mcp = assoc->firstMCP(daPlus), *mcm = assoc->firstMCP(daMinus);
-        Gaudi::LorentzVector twoDaMC;
-        if (mcp !=NULL && mcm != NULL)
-        {
-          twoDaMC = (mcp)->momentum() + (mcm)->momentum();
-          motherTuple->column("mc_DiMuon_InvMass", twoDaMC.M());
-        }
-        else motherTuple->column("mc_DiMuon_InvMass", m_errorCode*MeV);
-        
-        delete assoc;
+        getAndStoreMonteCarloInvariantMass(daPlus, daMinus, motherTuple);
       }
       
+      LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
+
       //calculateImpactParametersWithReconstructedPrimaryVertices(prims, daPlus, daMinus, muTrack1, myTrack2, motherTuple);
       //getAndStoreDiMuonDistanceOfClosestApproach(daPlus, daMinus, motherTuple);
-      fitVertexAndStoreImpactParameterData(motherID, daPlus, daMinus, motherTuple, hitDistTuple);
+      bool fitSuccess = fitVertexAndStoreImpactParameterData(Mother, daPlus, daMinus, motherTuple, hitDistTuple);
+      if (!fitSuccess)
+      {
+        motherTuple->write();
+        counter ("FitError")++;
+        continue;
+      }
       
       //### Mandatory. Set to true if event is accepted. ###//
       setFilterPassed(true);
@@ -251,6 +219,82 @@ void getAndStoreRunNumberAndL0EventID(Tuple tuple)
   const unsigned int runNum = odin->runNumber(), evNum = odin->eventNumber();
   tuple->column("RunNumber", runNum);
   tuple->column("EventID",   evNum);
+}
+
+void storeNumberOfMuonsAndPrimaryVertices(size_t nDaughters, const LHCb::RecVertex::Range prims, Tuple tuple)
+{
+  tuple->column("numMuons", (unsigned long long)nDaughters);
+  tuple->column("numPVs",   (unsigned long long)prims.size());
+}
+
+// This will be used to find the total energy and Pt of the event
+LHCb::Track::Vector extractAllLongTracksForEvent()
+{
+  LHCb::Track::Vector longTracks;
+  longTracks.clear();
+
+  LHCb::Tracks* allTracks;
+
+  if (exist<LHCb::Tracks>(LHCb::TrackLocation::Default))
+  {
+    allTracks = get<LHCb::Tracks>(LHCb::TrackLocation::Default);
+    LHCb::Tracks::iterator it;
+    for (it = allTracks->begin(); it != allTracks->end(); ++it){
+      LHCb::Track* track = *it;
+      if (track->type()==3) longTracks.push_back(track);
+    }
+  }
+  else info() << "There are no Tracks in the default location" << endmsg;
+
+  return longTracks;
+}
+
+void getAndStoreDiMuonInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  Gaudi::LorentzVector diMuonMomentum = muPlus->momentum() + muMinus->momentum();
+  debug() << "Rec two daughter mass is " << diMuonMomentum.M()/GeV << " GeV" << endmsg;
+  tuple->column("rec_DiMuon_InvMass", diMuonMomentum.M());
+}
+
+void storeNumberOfMuonsAndLongTracksPerEvent(size_t nDaughters, LHCb::Track::Vector longTracks, Tuple motherTuple)
+{
+  tuple->column("numMuonsPerEvent",      (unsigned long long)nDaughters);
+  tuple->column("numLongTracksPerEvent", (unsigned long long)longTracks.size());
+}
+
+void getAndStoreMomentumOfOtherTracks(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, LHCb::Track::Vector longTracks, Tuple tuple)
+{
+  //### Identify the tracks associated with the current dimuon pair ###//
+  const LHCb::Track* muTrack1 = muPlus->proto()->track();
+  const LHCb::Track* muTrack2 = muMinus->proto()->track();
+
+  //### Loop over all other tracks in event ###//
+  Gaudi::XYZVector otherLongTracks_P = Gaudi::XYZVector(0, 0, 0);
+  for ( LHCb::Track::Vector::iterator itt = longTracks.begin(); itt != longTracks.end(); ++itt)
+  {
+    LHCb::Track* trk = *itt;
+    if (trk != muTrack1 && trk != muTrack2) otherLongTracks_P += trk->momentum();
+  }
+  tuple->column("otherLongTracks_P",  otherLongTracks_P.R());
+  tuple->column("otherLongTracks_Pt", otherLongTracks_P.R()*sin(otherLongTracks_P.theta()));
+}
+
+void getAndStoreMonteCarloInvariantMass(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple)
+{
+  debug() << "Finding Invariant mass of MC DiMuon associated with reconstructed signal." << endmsg;
+
+  Particle2MCLinker* assoc = new Particle2MCLinker(this, Particle2MCMethod::Links, ""); // Retrieves associated MC particle
+  const LHCb::MCParticle *mcPlus = assoc->firstMCP(muPlus), *mcMinus = assoc->firstMCP(muMinus);
+
+  Gaudi::LorentzVector diMuonMomentum;
+  if (mcPlus !=NULL && mcMinus != NULL)
+  {
+    diMuonMomentum = (mcPlus)->momentum() + (mcMinus)->momentum();
+    tuple->column("mc_DiMuon_InvMass", diMuonMomentum.M());
+  }
+  else tuple->column("mc_DiMuon_InvMass", m_errorCode*MeV);
+
+  delete assoc;
 }
 
 void storeImpactParameterData(double fitIPplus, double fitIPminus, double fitIPEplus, double fitIPEminus,
@@ -397,17 +441,16 @@ void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, co
   tuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
 }
 
-void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb::Particle* muPlus,
+bool fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Particle* muPlus,
                                           const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple)
 {
   //### Now make the vertex by calling the Vertex Fitter (returns vertex and mother particle) ###//
   LHCb::Vertex DaDaVertex;
-  LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
   double fitIPplus=m_errorCode*mm, fitIPminus=m_errorCode*mm, fitIPEplus=m_errorCode*mm, fitIPEminus=m_errorCode*mm;
   double fitIPtot=m_errorCode*mm, fitIPEtot = m_errorCode*mm;
   IVertexFit* testTool = tool<IVertexFit>("LoKi::VertexFitter"); // TEST - Tool to fit vertices
-  StatusCode scFit = testTool->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Seems to work but need to verify
-  //StatusCode scFit = vertexFitter()->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Old method in Z2TauTau implementation
+  StatusCode scFit = testTool->fit(*(muPlus), *(muMinus), DaDaVertex, mother); // Seems to work but need to verify
+  //StatusCode scFit = vertexFitter()->fit(*(muPlus), *(muMinus), DaDaVertex, mother); // Old method in Z2TauTau implementation
 
   if (!scFit)
   {
@@ -417,11 +460,7 @@ void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb:
     motherTuple->column("rec_DiMuon_Chi2", -m_errorCode*mm);
     storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
     bool plottedDaughters = plotDaughters("plotDaughter", muPlus, muMinus, prims, motherTuple, hitDistTuple, runMC);
-    if (!plottedDaughters) return mothers;
-
-    motherTuple->write();
-    counter ("FitError")++;
-    continue;
+    if (!plottedDaughters) return false;
   }
 
   if (msgLevel(MSG::DEBUG)) debug() << "Vertex fit at " << DaDaVertex.position()/cm
@@ -435,6 +474,8 @@ void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb:
   //sc = m_extra->SignedImpactParameter(muMinus, &DaDaVertex, fitIPminus, fitIPEminus); // Calculate for muMinus
 
   storeImpactParameterData(fitIPplus, fitIPminus, fitIPEplus, fitIPEminus, fitIPtot, fitIPEtot, motherTuple);
+
+  return true;
 }
 
 bool plotDaughters(const std::string& counterName, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
