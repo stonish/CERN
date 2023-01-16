@@ -162,9 +162,11 @@ LHCb::Particle::Vector Rec::makeMother(const LHCb::Particle::ConstVector& daught
         getAndStoreMonteCarloInvariantMass(daPlus, daMinus, motherTuple);
       }
       
+      LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
+
       //calculateImpactParametersWithReconstructedPrimaryVertices(prims, daPlus, daMinus, muTrack1, myTrack2, motherTuple);
       //getAndStoreDiMuonDistanceOfClosestApproach(daPlus, daMinus, motherTuple);
-      fitVertexAndStoreImpactParameterData(motherID, daPlus, daMinus, motherTuple, hitDistTuple);
+      fitVertexAndStoreImpactParameterData(Mother, daPlus, daMinus, motherTuple, hitDistTuple);
       
       //### Mandatory. Set to true if event is accepted. ###//
       setFilterPassed(true);
@@ -433,17 +435,16 @@ void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, co
   tuple->column("rec_DiMuon_DOCA_Chi2", docaChi2);
 }
 
-void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb::Particle* muPlus,
+void fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Particle* muPlus,
                                           const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple)
 {
   //### Now make the vertex by calling the Vertex Fitter (returns vertex and mother particle) ###//
   LHCb::Vertex DaDaVertex;
-  LHCb::Particle Mother(motherID); // Fixed address in stack of mother to be created - Will be replaced by pointer to heap
   double fitIPplus=m_errorCode*mm, fitIPminus=m_errorCode*mm, fitIPEplus=m_errorCode*mm, fitIPEminus=m_errorCode*mm;
   double fitIPtot=m_errorCode*mm, fitIPEtot = m_errorCode*mm;
   IVertexFit* testTool = tool<IVertexFit>("LoKi::VertexFitter"); // TEST - Tool to fit vertices
-  StatusCode scFit = testTool->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Seems to work but need to verify
-  //StatusCode scFit = vertexFitter()->fit(*(muPlus),*(muMinus),DaDaVertex,Mother); // Old method in Z2TauTau implementation
+  StatusCode scFit = testTool->fit(*(muPlus), *(muMinus), DaDaVertex, mother); // Seems to work but need to verify
+  //StatusCode scFit = vertexFitter()->fit(*(muPlus), *(muMinus), DaDaVertex, mother); // Old method in Z2TauTau implementation
 
   if (!scFit)
   {

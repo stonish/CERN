@@ -69,7 +69,7 @@ private:
                                 const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
                                 const LHCb::Track* muPlusTrack, const LHCb::Track* muMinusTrack, Tuple tuple);
   void getAndStoreDiMuonDistanceOfClosestApproach(const LHCb::Particle* muPlus, const LHCb::Particle* muMinus, Tuple tuple);
-  void fitVertexAndStoreImpactParameterData(LHCb::ParticleID motherID, const LHCb::Particle* muPlus,
+  void fitVertexAndStoreImpactParameterData(LHCb::Particle mother, const LHCb::Particle* muPlus,
                                             const LHCb::Particle* muMinus, Tuple motherTuple, Tuple hitDistTuple);
   bool plotDaughters(const std::string& counterName, const LHCb::Particle* muPlus, const LHCb::Particle* muMinus,
                      const LHCb::RecVertex::Range prims, Tuple motherTuple, Tuple hitDistTuple, int runMC);
